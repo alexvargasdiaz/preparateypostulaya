@@ -1,0 +1,11 @@
+{
+    "name": "Rendicion",
+    "alias": "rendicion",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Rendicion\\Providers\\RendicionServiceProvider"
+    ],
+    "files": []
+}

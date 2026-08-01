@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/rendicion",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Rendicion\\": "app/",
+            "Modules\\Rendicion\\Database\\Factories\\": "database/factories/",
+            "Modules\\Rendicion\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Rendicion\\Tests\\": "tests/"
+        }
+    }
+}

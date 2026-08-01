@@ -1,0 +1,132 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Examenes\Services;
+
+use Modules\Catalogo\Models\Examen;
+use Modules\Preguntas\Models\Pregunta;
+use Modules\Rendicion\Models\IntentoExamen;
+use Modules\Rendicion\Models\RespuestaUsuario;
+use Modules\Rendicion\Models\ResultadoConcepto;
+
+class ExamenService
+{
+    public function iniciarIntento(Examen $examen): IntentoExamen
+    {
+        $preguntasIds = [];
+
+        // 1) Seleccionar preguntas por concepto según la configuración del examen
+        $conceptos = $examen->conceptos()->withPivot('num_preguntas')->get();
+
+        foreach ($conceptos as $concepto) {
+            $numPreguntas = $concepto->pivot->num_preguntas;
+
+            $ids = Pregunta::where('concepto_id', $concepto->id)
+                ->where('activa', true)
+                ->inRandomOrder()
+                ->limit($numPreguntas)
+                ->pluck('id')
+                ->toArray();
+
+            $preguntasIds = array_merge($preguntasIds, $ids);
+        }
+
+        // 2) Si no hay conceptos configurados, tomar las preguntas directas del examen
+        if (empty($preguntasIds)) {
+            $preguntasPorIntento = $examen->preguntas_por_intento ?? 10;
+            $preguntasIds = Pregunta::where('examen_id', $examen->id)
+                ->where('activa', true)
+                ->inRandomOrder()
+                ->limit($preguntasPorIntento)
+                ->pluck('id')
+                ->toArray();
+        }
+
+        // 3) Fallback: tomar preguntas del área académica
+        if (empty($preguntasIds) && $examen->area_academica_id) {
+            $preguntasPorIntento = $examen->preguntas_por_intento ?? 10;
+            $preguntasIds = Pregunta::where('area_academica_id', $examen->area_academica_id)
+                ->where('activa', true)
+                ->inRandomOrder()
+                ->limit($preguntasPorIntento)
+                ->pluck('id')
+                ->toArray();
+        }
+
+        return IntentoExamen::create([
+            'usuario_id' => auth()->id(),
+            'examen_id' => $examen->id,
+            'area_academica_id' => $examen->area_academica_id,
+            'carrera' => $examen->areaAcademica?->nombre ?? $examen->categoria?->nombre,
+            'institucion_id' => $examen->categoria?->institucion_id,
+            'estado' => 'en_curso',
+            'fecha_inicio' => now(),
+            'puntaje_maximo' => count($preguntasIds),
+            'progreso_guardado' => [
+                'preguntas_ids' => $preguntasIds,
+            ],
+        ]);
+    }
+
+    public function calcularPuntaje(IntentoExamen $intento): void
+    {
+        $preguntasIds = $intento->progreso_guardado['preguntas_ids'] ?? [];
+
+        if (!empty($preguntasIds)) {
+            $totalPreguntas = count($preguntasIds);
+        } else {
+            $totalPreguntas = Pregunta::where('area_academica_id', $intento->area_academica_id)
+                ->where('activa', true)
+                ->count();
+        }
+
+        $correctas = $intento->respuestas->where('es_correcta', true)->count();
+        $puntajeMinimo = round($totalPreguntas * 0.6);
+
+        $intento->update([
+            'puntaje_total' => $correctas,
+            'puntaje_maximo' => $totalPreguntas,
+            'aprobado' => $correctas >= $puntajeMinimo,
+        ]);
+    }
+
+    public function calcularResultadosPorConcepto(IntentoExamen $intento): void
+    {
+        $preguntas = Pregunta::whereIn('id', $intento->respuestas->pluck('pregunta_id'))
+            ->with('concepto')
+            ->get()
+            ->keyBy('id');
+
+        $conceptos = [];
+        foreach ($intento->respuestas as $respuesta) {
+            $pregunta = $preguntas->get($respuesta->pregunta_id);
+            if (!$pregunta?->concepto_id) continue;
+
+            $conceptos[$pregunta->concepto_id] ??= [
+                'concepto_id' => $pregunta->concepto_id,
+                'preguntas_totales' => 0,
+                'preguntas_correctas' => 0,
+            ];
+            $conceptos[$pregunta->concepto_id]['preguntas_totales']++;
+            if ($respuesta->es_correcta) {
+                $conceptos[$pregunta->concepto_id]['preguntas_correctas']++;
+            }
+        }
+
+        foreach ($conceptos as $data) {
+            $pct = $data['preguntas_totales'] > 0
+                ? round(($data['preguntas_correctas'] / $data['preguntas_totales']) * 100, 2)
+                : 0;
+
+            ResultadoConcepto::updateOrCreate(
+                ['intento_id' => $intento->id, 'concepto_id' => $data['concepto_id']],
+                [
+                    'preguntas_totales' => $data['preguntas_totales'],
+                    'preguntas_correctas' => $data['preguntas_correctas'],
+                    'porcentaje_acierto' => $pct,
+                ]
+            );
+        }
+    }
+}

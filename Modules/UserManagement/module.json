@@ -1,0 +1,11 @@
+{
+    "name": "UserManagement",
+    "alias": "usermanagement",
+    "description": "Gestión de usuarios y aprobación de cuentas",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\UserManagement\\Providers\\UserManagementServiceProvider"
+    ],
+    "files": []
+}

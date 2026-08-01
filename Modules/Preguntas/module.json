@@ -1,0 +1,11 @@
+{
+    "name": "Preguntas",
+    "alias": "preguntas",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Preguntas\\Providers\\PreguntasServiceProvider"
+    ],
+    "files": []
+}

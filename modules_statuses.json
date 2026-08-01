@@ -1,0 +1,14 @@
+{
+    "Auth": true,
+    "Catalogo": true,
+    "Examenes": true,
+    "Preguntas": true,
+    "Rendicion": true,
+    "Resultados": true,
+    "Notificaciones": true,
+    "AIAgentes": false,
+    "Dashboard": true,
+    "Progreso": true,
+    "Historial": true,
+    "UserManagement": true
+}

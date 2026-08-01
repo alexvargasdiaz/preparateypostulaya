@@ -1,0 +1,9 @@
+{
+    "name": "nwidart/usermanagement",
+    "description": "Módulo de gestión de usuarios y aprobación de cuentas",
+    "autoload": {
+        "psr-4": {
+            "Modules\\UserManagement\\": "app/"
+        }
+    }
+}

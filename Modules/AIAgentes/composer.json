@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/aiagentes",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\AIAgentes\\": "app/",
+            "Modules\\AIAgentes\\Database\\Factories\\": "database/factories/",
+            "Modules\\AIAgentes\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\AIAgentes\\Tests\\": "tests/"
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/progreso",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Progreso\\": "app/",
+            "Modules\\Progreso\\Database\\Factories\\": "database/factories/",
+            "Modules\\Progreso\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Progreso\\Tests\\": "tests/"
+        }
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "name": "AIAgentes",
+    "alias": "aiagentes",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\AIAgentes\\Providers\\AIAgentesServiceProvider"
+    ],
+    "files": []
+}
