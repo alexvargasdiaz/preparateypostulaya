@@ -279,7 +279,7 @@ export default function Configurar({ areas, configurados, duracionMinutos }) {
             <div className="min-h-screen bg-cyber-dark">
                 {/* Header */}
                 <div className="relative overflow-hidden border-b border-cyber-dark-400/50 bg-cyber-dark-100 cyber-grid">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,0,255,0.08),transparent_50%)]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
                     <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10 py-8">
                         <div className="flex items-center gap-5">
                             <div className="flex h-16 w-16 items-center justify-center rounded-xl cyber-card border-neon-magenta/40 shadow-neon-magenta">

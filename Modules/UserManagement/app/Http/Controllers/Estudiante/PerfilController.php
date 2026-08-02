@@ -47,7 +47,7 @@ class PerfilController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'whatsapp_numero' => ['nullable', 'string', 'max:20'],
+            'whatsapp_numero' => ['nullable', 'string', 'max:20', new \App\Rules\WhatsappPeruRule],
             'current_password' => ['nullable', 'string'],
             'new_password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
@@ -55,7 +55,9 @@ class PerfilController extends Controller
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'whatsapp_numero' => $validated['whatsapp_numero'] ?? null,
+            'whatsapp_numero' => isset($validated['whatsapp_numero']) && $validated['whatsapp_numero'] !== null
+                ? \App\Support\Telefono::normalizarWhatsApp($validated['whatsapp_numero'])
+                : null,
         ];
 
         // ─── Cambiar contraseña ──────────────────────────

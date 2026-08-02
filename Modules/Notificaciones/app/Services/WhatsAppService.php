@@ -48,7 +48,7 @@ class WhatsAppService
         }
 
         try {
-            $this->client->messages->create(
+            $mensajeCreado = $this->client->messages->create(
                 "whatsapp:{$numeroLimpio}",
                 [
                     'from' => $this->fromNumber,
@@ -56,8 +56,26 @@ class WhatsAppService
                 ]
             );
 
+            $estado = $mensajeCreado->status ?? 'created';
+            $errorCode = $mensajeCreado->errorCode ?? null;
+            $errorMessage = $mensajeCreado->errorMessage ?? null;
+
+            if ($estado === 'failed' || $errorCode !== null) {
+                \Log::error('WhatsApp rechazado por Twilio', [
+                    'numero' => $numeroLimpio,
+                    'status' => $estado,
+                    'errorCode' => $errorCode,
+                    'errorMessage' => $errorMessage,
+                    'sid' => $mensajeCreado->sid ?? null,
+                    'mensaje' => $mensaje,
+                ]);
+
+                return false;
+            }
+
             \Log::info('WhatsApp enviado exitosamente', [
                 'numero' => $numeroLimpio,
+                'status' => $estado,
                 'mensaje' => $mensaje,
             ]);
 

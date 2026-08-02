@@ -48,31 +48,7 @@ class AreaAcademicaController extends Controller
             ->withCount(['preguntas as total_preguntas' => fn ($q) => $q->where('activa', true)])
             ->findOrFail($areaId);
 
-        // Mostrar exámenes del área (en lugar de solo tipos de simulacro)
-        $examenes = Examen::where('area_academica_id', $areaId)
-            ->where('activo', true)
-            ->with('conceptos')
-            ->orderBy('titulo')
-            ->get()
-            ->map(function ($ex) use ($user) {
-                $totalPreguntas = 0;
-                foreach ($ex->conceptos as $concepto) {
-                    $count = Pregunta::where('concepto_id', $concepto->id)
-                        ->where('activa', true)
-                        ->count();
-                    $totalPreguntas += min($count, $concepto->pivot->num_preguntas);
-                }
-                return [
-                    'id' => $ex->id,
-                    'titulo' => $ex->titulo,
-                    'descripcion' => $ex->descripcion,
-                    'tiempo_limite_min' => $ex->tiempo_limite_min,
-                    'preguntas_totales' => $totalPreguntas,
-                    'intentos_permitidos' => $ex->intentos_permitidos,
-                ];
-            });
-
-        // También mantener tipos de simulacro para compatibilidad
+        // Tipos de simulacro del área
         $tipos = TipoSimulacro::where('area_academica_id', $areaId)
             ->where('activo', true)
             ->withCount(['intentos as total_intentos' => fn ($q) => $q->where('usuario_id', $user->id)])
@@ -94,7 +70,6 @@ class AreaAcademicaController extends Controller
 
         return Inertia::render('Examenes/AreasAcademicas/Tipos', [
             'area' => $area,
-            'examenes' => $examenes,
             'tipos' => $tipos,
             'intentoActivo' => $intentoActivo,
         ]);

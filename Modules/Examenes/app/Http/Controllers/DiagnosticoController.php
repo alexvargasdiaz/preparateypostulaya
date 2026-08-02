@@ -52,10 +52,17 @@ class DiagnosticoController extends Controller
             }
         }
 
+        // Duración: configurada o automática (~30 seg por pregunta, mínimo 5 min)
+        $duracionConfig = DiagnosticoConcepto::first()?->duracion_minutos;
+        $duracionMinutos = $duracionConfig
+            ? (int) $duracionConfig
+            : max(5, (int) ceil($configMap->sum() / 2));
+
         return Inertia::render('Diagnosticos/Index', [
             'intentos' => $intentos,
             'areas' => $areas,
             'totalPreguntas' => $totalPreguntas,
+            'duracionMinutos' => $duracionMinutos,
         ]);
     }
 
@@ -122,11 +129,11 @@ class DiagnosticoController extends Controller
 
         $idsSeleccionados = $preguntasSeleccionadas->pluck('id')->toArray();
 
-        // Calcular duración: usar la configurada o auto (1 min por pregunta)
+        // Calcular duración: usar la configurada o auto (~30 seg por pregunta, mínimo 5 min)
         $duracionConfig = DiagnosticoConcepto::first()?->duracion_minutos;
         $tiempoTotal = $duracionConfig
             ? $duracionConfig * 60
-            : count($idsSeleccionados) * 60;
+            : max(5, (int) ceil(count($idsSeleccionados) / 2)) * 60;
 
         $intento = IntentoExamen::create([
             'usuario_id' => $user->id,

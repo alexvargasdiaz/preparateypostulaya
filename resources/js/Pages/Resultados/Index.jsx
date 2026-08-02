@@ -113,11 +113,11 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                 {/* Header */}
                 <div className={`relative py-12 overflow-hidden ${
                     aprobado
-                        ? 'bg-gradient-to-br from-neon-cyan/20 via-cyber-dark-100 to-cyber-dark'
-                        : 'bg-gradient-to-br from-neon-magenta/10 via-cyber-dark-100 to-cyber-dark'}`}
+                        ? 'bg-gradient-to-br from-neon-cyan/20 via-cyber-dark-100 to-cyber-dark cyber-grid'
+                        : 'bg-gradient-to-br from-neon-magenta/10 via-cyber-dark-100 to-cyber-dark cyber-grid'}`}
                 >
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,240,255,0.1),transparent_70%)]" />
-                    <div className="relative mx-auto max-w-5xl px-5 sm:px-8 lg:px-10">
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold backdrop-blur-sm neon-text ${
                             aprobado ? 'cyber-badge cyber-badge-cyan' : 'cyber-badge cyber-badge-magenta'
                         }`}>
@@ -134,7 +134,7 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                 </div>
 
                 {/* Content */}
-                <div className="mx-auto max-w-5xl px-5 sm:px-8 lg:px-10 mt-4 pb-12">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-4 pb-12">
                     {/* Score card */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -193,6 +193,97 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                             </div>
                         </div>
                     </motion.div>
+
+                    {/* Carreras compatibles según puntaje */}
+                    {esAreaAcademica && carrerasCompatibles.length > 0 && (
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                            className="rounded-xl cyber-card p-5 mt-4 border-neon-green/30 bg-neon-green/[0.03]">
+                            <div className="flex items-center gap-2 mb-1">
+                                <CheckCircle2 className="h-5 w-5 text-neon-green" />
+                                <h2 className="text-lg font-heading font-bold text-neon-green neon-text-green">
+                                    Carreras que alcanzas ({carrerasCompatibles.length})
+                                </h2>
+                            </div>
+                            <p className="text-xs font-semibold text-text-muted mb-4">
+                                Según tu puntaje de {porcentaje}%, podrías estar apto para estas carreras:
+                            </p>
+                            <div className="space-y-2">
+                                {carrerasCompatibles.map((c) => (
+                                    <div key={c.categoria_id} className="flex items-center justify-between rounded-xl bg-cyber-dark-200 border border-neon-green/20 p-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-green/10 border border-neon-green/30">
+                                                <GraduationCap className="h-5 w-5 text-neon-green" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-heading font-bold text-text-primary">{c.nombre}</p>
+                                                <p className="text-xs font-semibold text-text-muted flex items-center gap-1">
+                                                    <Building2 className="h-3 w-3" /> {c.institucion}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="cyber-badge cyber-badge-green rounded-lg px-3 py-1 text-xs font-bold">
+                                                {c.puntaje_obtenido}% &ge; {c.puntaje_minimo}% mínimo
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {esAreaAcademica && carrerasNoCompatibles.length > 0 && (
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                            className="rounded-xl cyber-card p-5 mt-4 border-neon-magenta/20">
+                            <div className="flex items-center gap-2 mb-4">
+                                <AlertTriangle className="h-5 w-5 text-neon-magenta" />
+                                <h2 className="text-lg font-heading font-bold text-text-primary">
+                                    Carreras que aún no alcanzas ({carrerasNoCompatibles.length})
+                                </h2>
+                            </div>
+                            <div className="space-y-3">
+                                {carrerasNoCompatibles.map((c) => {
+                                    const faltante = c.puntaje_minimo > 0 ? Math.max(0, c.puntaje_minimo - c.puntaje_obtenido) : 0;
+                                    return (
+                                        <div key={c.categoria_id} className="rounded-xl border border-cyber-dark-400/30 bg-cyber-dark-200 p-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-magenta/10 border border-neon-magenta/20">
+                                                        <GraduationCap className="h-5 w-5 text-neon-magenta" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-heading font-bold text-text-primary">{c.nombre}</p>
+                                                        <p className="text-xs font-semibold text-text-muted flex items-center gap-1">
+                                                            <Building2 className="h-3 w-3" /> {c.institucion}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="cyber-badge cyber-badge-magenta rounded-lg px-3 py-1 text-xs font-bold">
+                                                        {c.puntaje_obtenido}% / {c.puntaje_minimo}% mínimo
+                                                    </span>
+                                                    {faltante > 0 && (
+                                                        <p className="mt-1 text-[10px] font-bold text-text-muted">
+                                                            Te faltan {faltante.toFixed(1)} puntos
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {c.areas_faltantes && c.areas_faltantes.length > 0 && (
+                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                    {c.areas_faltantes.map((af, i) => (
+                                                        <span key={i} className="inline-flex items-center gap-1 rounded-lg bg-neon-magenta/5 border border-neon-magenta/20 px-2.5 py-0.5 text-[10px] font-bold text-neon-cyan/70">
+                                                            {af.nombre}: obtuviste {af.obtenido}%, necesitas &ge;{af.requerido}%
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* Weak concepts */}
                     {conceptosDebiles.length > 0 && (
@@ -464,94 +555,6 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                             </div>
                         </div>
                     </motion.div>
-
-                    {/* Carreras compatibles */}
-                    {esAreaAcademica && carrerasCompatibles.length > 0 && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                            className="rounded-xl cyber-card p-5 mb-4 border-neon-green/30 bg-neon-green/[0.03]">
-                            <div className="flex items-center gap-2 mb-4">
-                                <CheckCircle2 className="h-5 w-5 text-neon-green" />
-                                <h2 className="text-lg font-heading font-bold text-neon-green neon-text-green">
-                                    Carreras que alcanzas ({carrerasCompatibles.length})
-                                </h2>
-                            </div>
-                            <div className="space-y-2">
-                                {carrerasCompatibles.map((c) => (
-                                    <div key={c.categoria_id} className="flex items-center justify-between rounded-xl bg-cyber-dark-200 border border-neon-green/20 p-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-green/10 border border-neon-green/30">
-                                                <GraduationCap className="h-5 w-5 text-neon-green" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-heading font-bold text-text-primary">{c.nombre}</p>
-                                                <p className="text-xs font-semibold text-text-muted flex items-center gap-1">
-                                                    <Building2 className="h-3 w-3" /> {c.institucion}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="cyber-badge cyber-badge-green rounded-lg px-3 py-1 text-xs font-bold">
-                                                {c.puntaje_obtenido}% &ge; {c.puntaje_minimo}% mínimo
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {esAreaAcademica && carrerasNoCompatibles.length > 0 && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-                            className="rounded-xl cyber-card p-5 mb-4 border-neon-magenta/20">
-                            <div className="flex items-center gap-2 mb-4">
-                                <AlertTriangle className="h-5 w-5 text-neon-magenta" />
-                                <h2 className="text-lg font-heading font-bold text-text-primary">
-                                    Carreras que aún no alcanzas ({carrerasNoCompatibles.length})
-                                </h2>
-                            </div>
-                            <div className="space-y-3">
-                                {carrerasNoCompatibles.map((c) => {
-                                    const faltante = c.puntaje_minimo > 0 ? Math.max(0, c.puntaje_minimo - c.puntaje_obtenido) : 0;
-                                    return (
-                                        <div key={c.categoria_id} className="rounded-xl border border-cyber-dark-400/30 bg-cyber-dark-200 p-4">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-magenta/10 border border-neon-magenta/20">
-                                                        <GraduationCap className="h-5 w-5 text-neon-magenta" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-heading font-bold text-text-primary">{c.nombre}</p>
-                                                        <p className="text-xs font-semibold text-text-muted flex items-center gap-1">
-                                                            <Building2 className="h-3 w-3" /> {c.institucion}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className="cyber-badge cyber-badge-magenta rounded-lg px-3 py-1 text-xs font-bold">
-                                                        {c.puntaje_obtenido}% / {c.puntaje_minimo}% mínimo
-                                                    </span>
-                                                    {faltante > 0 && (
-                                                        <p className="mt-1 text-[10px] font-bold text-text-muted">
-                                                            Te faltan {faltante.toFixed(1)} puntos
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {c.areas_faltantes && c.areas_faltantes.length > 0 && (
-                                                <div className="mt-3 flex flex-wrap gap-2">
-                                                    {c.areas_faltantes.map((af, i) => (
-                                                        <span key={i} className="inline-flex items-center gap-1 rounded-lg bg-neon-magenta/5 border border-neon-magenta/20 px-2.5 py-0.5 text-[10px] font-bold text-neon-cyan/70">
-                                                            {af.nombre}: obtuviste {af.obtenido}%, necesitas &ge;{af.requerido}%
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </motion.div>
-                    )}
 
                     {/* Actions */}
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row">

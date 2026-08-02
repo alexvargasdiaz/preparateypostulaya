@@ -119,7 +119,7 @@ export default function Welcome({ auth, flash, testimonios = [], facultades = []
             {/* ===== HERO SECTION ===== */}
             <section className="relative overflow-hidden bg-cyber-dark pt-24 sm:pt-28 cyber-grid">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.1),transparent_50%)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,0,255,0.06),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(0,240,255,0.06),transparent_50%)]" />
                 
                 <div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
                     <div className="grid items-center gap-12 lg:grid-cols-2 min-h-[calc(100vh-8rem)] py-12 lg:py-0">
@@ -319,7 +319,7 @@ export default function Welcome({ auth, flash, testimonios = [], facultades = []
             <section className="relative overflow-hidden bg-cyber-dark-100 border-y border-cyber-dark-400/50 py-20 sm:py-24">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,240,255,0.06),transparent_70%)]" />
                 <div className="absolute inset-0" style={{
-                    backgroundImage: 'radial-gradient(circle at 25% 50%, rgba(255,0,255,0.04) 0%, transparent 50%), radial-gradient(circle at 75% 50%, rgba(0,240,255,0.04) 0%, transparent 50%)',
+                    backgroundImage: 'radial-gradient(circle at 25% 50%, rgba(0,240,255,0.04) 0%, transparent 50%), radial-gradient(circle at 75% 50%, rgba(0,240,255,0.04) 0%, transparent 50%)',
                 }} />
                 <div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
                     <div className="grid items-center gap-12 lg:grid-cols-5">
@@ -592,7 +592,7 @@ export default function Welcome({ auth, flash, testimonios = [], facultades = []
 
             {/* ===== FINAL CTA ===== */}
             <section className="relative overflow-hidden bg-cyber-dark-200 py-20 cyber-grid">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,0,255,0.1),transparent_70%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,240,255,0.1),transparent_70%)]" />
                 <div className="relative mx-auto max-w-4xl px-5 sm:px-8 lg:px-10 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

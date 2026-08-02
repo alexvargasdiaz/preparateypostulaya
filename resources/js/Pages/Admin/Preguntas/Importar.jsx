@@ -61,9 +61,9 @@ export default function AdminPreguntasImportar({ areas, conceptos }) {
         <>
             <Head title="Importar Preguntas Masivo" />
             <div className="min-h-screen bg-cyber-dark">
-                <div className="relative overflow-hidden bg-gradient-to-br from-neon-magenta/15 via-cyber-dark-100 to-cyber-dark py-8">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,0,255,0.08),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-4xl px-5 sm:px-8 lg:px-10">
+                <div className="relative overflow-hidden bg-gradient-to-br from-neon-magenta/15 via-cyber-dark-100 to-cyber-dark py-8 cyber-grid">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className="flex items-center justify-between">
                             <div>
                                 <div className="cyber-badge cyber-badge-magenta rounded-lg px-4 py-1.5 text-sm font-bold inline-flex mb-3"><Upload className="h-4 w-4" /> Importar Masivo</div>
@@ -75,7 +75,7 @@ export default function AdminPreguntasImportar({ areas, conceptos }) {
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-4xl px-5 sm:px-8 lg:px-10 mt-4 pb-8 space-y-4">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-4 pb-8 space-y-4">
                     {flash?.success && <div className="animate-slide-down flex items-center gap-2 rounded-xl border border-neon-green/30 bg-neon-green/5 px-5 py-3 text-sm font-bold text-neon-green"><CheckCircle2 size={18} /> {flash.success}</div>}
                     {flash?.errores_importacion?.length > 0 && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="cyber-card rounded-xl p-5 border-neon-magenta/20">

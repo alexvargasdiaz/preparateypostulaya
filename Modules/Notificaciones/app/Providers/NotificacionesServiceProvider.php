@@ -4,6 +4,7 @@ namespace Modules\Notificaciones\Providers;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Modules\Notificaciones\Console\Commands\SendStudyReminder;
+use Modules\Notificaciones\Console\Commands\TestWhatsApp;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class NotificacionesServiceProvider extends ModuleServiceProvider
@@ -37,7 +38,7 @@ class NotificacionesServiceProvider extends ModuleServiceProvider
 
         // Registrar comandos manualmente para garantizar su disponibilidad
         if ($this->app->runningInConsole()) {
-            $this->commands([SendStudyReminder::class]);
+            $this->commands([SendStudyReminder::class, TestWhatsApp::class]);
         }
     }
 

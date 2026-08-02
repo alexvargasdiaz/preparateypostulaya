@@ -44,71 +44,83 @@ class SendStudyReminder extends Command
 
         $this->info("🔍 Buscando usuarios inactivos desde hace {$diasMinimos}+ días...");
 
-        // Obtener usuarios con preferencia de recordatorio activada
-        $preferencias = PreferenciaNotificacion::with('usuario')
-            ->where('recordatorio_estudio', true)
-            ->get();
-
-        if ($preferencias->isEmpty()) {
+        if (!PreferenciaNotificacion::where('recordatorio_estudio', true)->exists()) {
             $this->warn('No hay usuarios con recordatorios de estudio activados.');
             return Command::SUCCESS;
         }
 
-        $this->line("   Usuarios con recordatorio activado: {$preferencias->count()}");
-        $this->newLine();
-
         $enviados = 0;
         $saltados = 0;
 
-        foreach ($preferencias as $pref) {
-            $usuario = $pref->usuario;
+        // Procesar en lotes para no cargar todas las preferencias en memoria
+        PreferenciaNotificacion::query()
+            ->where('recordatorio_estudio', true)
+            ->with('usuario')
+            ->orderBy('id')
+            ->chunkById(500, function ($preferencias) use (&$enviados, &$saltados, $diasMinimos, $dryRun, $notificationService) {
+                $usuarios = $preferencias->pluck('usuario')->filter();
 
-            if (!$usuario || !$usuario->guardaHistorial()) {
-                $saltados++;
-                continue;
-            }
+                if ($usuarios->isEmpty()) {
+                    $saltados += $preferencias->count();
+                    return;
+                }
 
-            // Buscar el último intento completado del usuario
-            $ultimoIntento = IntentoExamen::where('usuario_id', $usuario->id)
-                ->where('estado', 'completado')
-                ->orderBy('created_at', 'desc')
-                ->first();
+                // Único query por lote: último intento completado de cada usuario
+                $ultimosIntentos = IntentoExamen::query()
+                    ->select('usuario_id', 'examen_id', 'created_at')
+                    ->whereIn('usuario_id', $usuarios->pluck('id')->all())
+                    ->where('estado', 'completado')
+                    ->orderBy('created_at', 'desc')
+                    ->get()
+                    ->groupBy('usuario_id')
+                    ->map->first();
 
-            if (!$ultimoIntento) {
-                // Usuario nunca ha completado un examen
-                $dias = 999;
-                $ultimoExamen = null;
-            } else {
-                $dias = (int) $ultimoIntento->created_at->diffInDays(now());
-                $ultimoExamen = $ultimoIntento->examen?->titulo;
-            }
+                foreach ($preferencias as $pref) {
+                    $usuario = $pref->usuario;
 
-            if ($dias < $diasMinimos) {
-                $saltados++;
-                continue;
-            }
+                    if (!$usuario || !$usuario->guardaHistorial()) {
+                        $saltados++;
+                        continue;
+                    }
 
-            if ($dryRun) {
-                $this->line("   [DRY-RUN] {$usuario->name} <{$usuario->email}> — {$dias} días sin practicar" . ($ultimoExamen ? " (último: {$ultimoExamen})" : ' (nunca ha rendido)'));
-                $enviados++;
-                continue;
-            }
+                    $ultimoIntento = $ultimosIntentos->get($usuario->id);
 
-            // Enviar recordatorio
-            try {
-                $notificationService->recordatorioEstudio(
-                    usuario: $usuario,
-                    diasSinPracticar: $dias,
-                    ultimoExamen: $ultimoExamen,
-                );
+                    if (!$ultimoIntento) {
+                        // Usuario nunca ha completado un examen
+                        $dias = 999;
+                        $ultimoExamen = null;
+                    } else {
+                        $dias = (int) $ultimoIntento->created_at->diffInDays(now());
+                        $ultimoExamen = $ultimoIntento->examen?->titulo;
+                    }
 
-                $this->line("   ✅ {$usuario->name} — {$dias} días sin practicar" . ($ultimoExamen ? " (último: {$ultimoExamen})" : ''));
-                $enviados++;
-            } catch (\Exception $e) {
-                $this->error("   ❌ Error al notificar a {$usuario->email}: {$e->getMessage()}");
-                report($e);
-            }
-        }
+                    if ($dias < $diasMinimos) {
+                        $saltados++;
+                        continue;
+                    }
+
+                    if ($dryRun) {
+                        $this->line("   [DRY-RUN] {$usuario->name} <{$usuario->email}> — {$dias} días sin practicar" . ($ultimoExamen ? " (último: {$ultimoExamen})" : ' (nunca ha rendido)'));
+                        $enviados++;
+                        continue;
+                    }
+
+                    // Enviar recordatorio
+                    try {
+                        $notificationService->recordatorioEstudio(
+                            usuario: $usuario,
+                            diasSinPracticar: $dias,
+                            ultimoExamen: $ultimoExamen,
+                        );
+
+                        $this->line("   ✅ {$usuario->name} — {$dias} días sin practicar" . ($ultimoExamen ? " (último: {$ultimoExamen})" : ''));
+                        $enviados++;
+                    } catch (\Exception $e) {
+                        $this->error("   ❌ Error al notificar a {$usuario->email}: {$e->getMessage()}");
+                        report($e);
+                    }
+                }
+            });
 
         $this->newLine();
 

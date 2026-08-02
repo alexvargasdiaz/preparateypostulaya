@@ -28,9 +28,9 @@ export default function AdminExamenesIndex({ examenes, areas, filtros }) {
         <>
             <Head title="Admin - Exámenes" />
             <div className="min-h-screen bg-cyber-dark">
-                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/15 via-cyber-dark-100 to-cyber-dark py-8">
+                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/15 via-cyber-dark-100 to-cyber-dark py-8 cyber-grid">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.1),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <div className="cyber-badge cyber-badge-magenta rounded-lg px-4 py-1.5 text-sm font-bold inline-flex mb-3">
@@ -44,7 +44,7 @@ export default function AdminExamenesIndex({ examenes, areas, filtros }) {
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:px-10 mt-4 pb-8">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-4 pb-8">
                     {flash?.success && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                             className="mb-4 rounded-xl border border-neon-green/30 bg-neon-green/5 px-5 py-3 text-sm font-bold text-neon-green flex items-center gap-2">

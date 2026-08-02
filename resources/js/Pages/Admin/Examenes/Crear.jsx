@@ -107,10 +107,10 @@ export default function AdminExamenesCrear({ areas, conceptos, instituciones, ca
         <>
             <Head title={editando ? 'Editar Examen' : 'Nuevo Examen'} />
             <div className="min-h-screen bg-[#0b0f17]">
-                <div className="relative py-8 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(255,0,255,0.08))' }}>
+                <div className="relative py-8 overflow-hidden cyber-grid" style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(255,0,255,0.08))' }}>
                     <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-                    <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 50%, rgba(0,240,255,0.1) 0%, transparent 60%), radial-gradient(ellipse at 70% 50%, rgba(255,0,255,0.08) 0%, transparent 60%)' }} />
-                    <div className="relative mx-auto max-w-3xl px-5 sm:px-8 lg:px-10">
+                    <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 50%, rgba(0,240,255,0.1) 0%, transparent 60%), radial-gradient(ellipse at 70% 50%, rgba(0,240,255,0.08) 0%, transparent 60%)' }} />
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h1 className="text-2xl font-bold neon-text-strong-cyan">{editando ? 'Editar Examen' : 'Nuevo Examen'}</h1>
@@ -121,7 +121,7 @@ export default function AdminExamenesCrear({ areas, conceptos, instituciones, ca
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-3xl px-5 sm:px-8 lg:px-10 mt-4 pb-8">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-4 pb-8">
                     {flash?.success && (
                         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                             className="mb-4 rounded-xl border border-neon-green/30 bg-neon-green/10 px-5 py-3 text-sm font-medium text-neon-green shadow-neon-green">

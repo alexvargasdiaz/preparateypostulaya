@@ -68,7 +68,6 @@ class AdminPreguntasController extends Controller
         $validated = $request->validate([
             'area_academica_id' => 'required|exists:areas_academicas,id',
             'concepto_id' => 'required|exists:conceptos,id',
-            'nivel' => 'nullable|integer|min:1|max:3',
             'enunciado' => 'required|string',
             'dificultad' => 'required|in:facil,media,dificil',
             'tipo' => 'required|in:opcion_multiple',
@@ -88,7 +87,6 @@ class AdminPreguntasController extends Controller
         $pregunta = Pregunta::create([
             'area_academica_id' => $validated['area_academica_id'],
             'concepto_id' => $validated['concepto_id'],
-            'nivel' => $validated['nivel'] ?? null,
             'enunciado' => $validated['enunciado'],
             'enunciado_imagen_url' => $validated['enunciado_imagen_url'] ?? null,
             'dificultad' => $validated['dificultad'],
@@ -136,7 +134,6 @@ class AdminPreguntasController extends Controller
         $validated = $request->validate([
             'area_academica_id' => 'required|exists:areas_academicas,id',
             'concepto_id' => 'required|exists:conceptos,id',
-            'nivel' => 'nullable|integer|min:1|max:3',
             'enunciado' => 'required|string',
             'dificultad' => 'required|in:facil,media,dificil',
             'tipo' => 'required|in:opcion_multiple',
@@ -182,7 +179,6 @@ class AdminPreguntasController extends Controller
         $pregunta->update([
             'area_academica_id' => $validated['area_academica_id'],
             'concepto_id' => $validated['concepto_id'],
-            'nivel' => $validated['nivel'] ?? null,
             'enunciado' => $validated['enunciado'],
             'enunciado_imagen_url' => $newEnunciadoImg,
             'dificultad' => $validated['dificultad'],

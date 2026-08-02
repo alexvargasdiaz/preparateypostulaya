@@ -11,6 +11,7 @@ import {
     Sparkles,
     UserPlus
 } from 'lucide-react';
+import { normalizarWhatsApp } from '@/lib/utils';
 
 const rolIcons = {
     estudiante: GraduationCap,
@@ -30,13 +31,14 @@ export default function AdminUsuariosCrear({ usuario, editando }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (whatsapp && !normalizarWhatsApp(whatsapp)) return;
         setSubmitting(true);
 
         const data = {
             name,
             email,
             rol,
-            whatsapp_numero: whatsapp || null,
+            whatsapp_numero: normalizarWhatsApp(whatsapp) || null,
         };
 
         if (!editando) {
@@ -69,8 +71,8 @@ export default function AdminUsuariosCrear({ usuario, editando }) {
             <div className="min-h-screen bg-cyber-dark">
                 {/* Header */}
                 <div className="relative overflow-hidden border-b border-cyber-dark-400/50 bg-cyber-dark-100 cyber-grid">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,0,255,0.08),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-3xl px-5 sm:px-8 lg:px-10 py-8">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10 py-8">
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
                             className="flex items-center justify-between">
                             <div>
@@ -94,7 +96,7 @@ export default function AdminUsuariosCrear({ usuario, editando }) {
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-3xl px-5 sm:px-8 lg:px-10 mt-6 pb-8">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-6 pb-8">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Flash Messages */}
                         {flash?.success && (

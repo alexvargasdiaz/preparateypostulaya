@@ -1,14 +1,29 @@
+import { useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { motion } from 'motion/react';
-import { GraduationCap, Clock, CheckCircle2, ClipboardList, Phone, Send, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
+import { GraduationCap, Clock, Phone, Send, Sparkles, CheckCircle, AlertTriangle } from 'lucide-react';
+import { normalizarWhatsApp } from '@/lib/utils';
 
 export default function Pendiente({ userEmail, userName, whatsappNumero }) {
     const { flash } = usePage().props;
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         whatsapp_numero: whatsappNumero || '',
     });
+    const [clienteInvalido, setClienteInvalido] = useState(false);
 
-    const submit = (e) => { e.preventDefault(); post('/pendiente/whatsapp'); };
+    const submit = (e) => {
+        e.preventDefault();
+        if (!normalizarWhatsApp(data.whatsapp_numero)) {
+            setClienteInvalido(true);
+            return;
+        }
+        setClienteInvalido(false);
+        transform((values) => ({
+            ...values,
+            whatsapp_numero: normalizarWhatsApp(values.whatsapp_numero),
+        }));
+        post('/pendiente/whatsapp');
+    };
 
     return (
         <>
@@ -66,21 +81,6 @@ export default function Pendiente({ userEmail, userName, whatsappNumero }) {
                             Tu registro ha sido recibido. Un administrador revisará tu cuenta y la activará para que puedas acceder a los simulacros.
                         </p>
 
-                        <div className="mt-8 space-y-3">
-                            {[
-                                { icon: ClipboardList, text: 'Registro completado', active: true, color: 'text-neon-green' },
-                                { icon: Clock, text: 'Esperando aprobación', active: true, color: 'text-neon-yellow' },
-                                { icon: CheckCircle2, text: 'Acceso a simulacros', active: false, color: 'text-text-muted' },
-                            ].map((item) => (
-                                <div key={item.text} className={`flex items-center justify-center gap-3 text-sm ${item.active ? item.color : 'text-text-muted'}`}>
-                                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${item.active ? 'border-current' : 'border-cyber-dark-400'}`}>
-                                        <item.icon className="h-4 w-4" />
-                                    </span>
-                                    <span className="font-semibold">{item.text}</span>
-                                </div>
-                            ))}
-                        </div>
-
                         {/* WhatsApp section: ocultar formulario si ya está registrado */}
                         <div className="mt-8 border-t border-cyber-dark-400/50 pt-6">
                             {whatsappNumero ? (
@@ -98,7 +98,7 @@ export default function Pendiente({ userEmail, userName, whatsappNumero }) {
                                 <>
                                     <div className="mb-4 flex items-center justify-center gap-2 text-sm text-text-secondary">
                                         <Phone className="h-4 w-4 text-neon-green" />
-                                        <span className="font-semibold">Agrega tu WhatsApp para recibir notificaciones</span>
+                                        <span className="font-semibold">Agrega tu WhatsApp para enviarte tu aprobación</span>
                                     </div>
 
                                     <form onSubmit={submit} className="flex flex-col gap-3">
@@ -111,6 +111,9 @@ export default function Pendiente({ userEmail, userName, whatsappNumero }) {
                                         </div>
                                         {errors?.whatsapp_numero && (
                                             <p className="mt-1 text-xs font-bold text-neon-cyan/80 text-left">{errors.whatsapp_numero}</p>
+                                        )}
+                                        {clienteInvalido && (
+                                            <p className="mt-1 text-xs font-bold text-neon-cyan/80 text-left">Ingresa un número de WhatsApp válido de 9 dígitos (ej: 999 888 777).</p>
                                         )}
                                         <button type="submit" disabled={processing || !data.whatsapp_numero}
                                             className="cyber-btn-wallet rounded-xl py-3 text-sm justify-center disabled:opacity-50">

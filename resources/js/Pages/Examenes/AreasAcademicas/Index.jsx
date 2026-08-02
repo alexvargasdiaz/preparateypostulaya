@@ -9,9 +9,9 @@ export default function AreasAcademicas({ areas, intentosPorArea }) {
 
             <div className="min-h-screen bg-cyber-dark cyber-grid">
                 {/* Header */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/10 via-cyber-dark-100 to-cyber-dark pb-12 pt-8">
+                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/10 via-cyber-dark-100 to-cyber-dark pb-12 pt-8 cyber-grid">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(0,240,255,0.06),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-5xl px-5 sm:px-8 lg:px-10">
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className="inline-flex items-center gap-2 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 px-4 py-1.5 text-sm font-bold text-neon-cyan mb-4">
                             <Brain className="h-4 w-4" /> Simulacro por Área
                         </div>
@@ -25,7 +25,7 @@ export default function AreasAcademicas({ areas, intentosPorArea }) {
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-5xl px-5 sm:px-8 lg:px-10 mt-6 pb-12">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-6 pb-12">
                     <div className="grid gap-5 sm:grid-cols-2">
                         {areas.map((area) => {
                             const intentos = intentosPorArea[area.id] || 0;

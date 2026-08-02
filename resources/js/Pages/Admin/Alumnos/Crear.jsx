@@ -2,6 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, AlertTriangle, UserPlus, ArrowLeft } from 'lucide-react';
+import { normalizarWhatsApp } from '@/lib/utils';
 
 export default function AdminAlumnosCrear({ alumno, editando }) {
     const { errors, flash } = usePage().props;
@@ -15,9 +16,10 @@ export default function AdminAlumnosCrear({ alumno, editando }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (submitting) return;
+        if (whatsapp && !normalizarWhatsApp(whatsapp)) return;
         setSubmitting(true);
 
-        const data = { name, email, whatsapp_numero: whatsapp || null };
+        const data = { name, email, whatsapp_numero: normalizarWhatsApp(whatsapp) || null };
 
         if (!editando) {
             data.password = password;
@@ -46,7 +48,7 @@ export default function AdminAlumnosCrear({ alumno, editando }) {
                 {/* Header */}
                 <div className="relative overflow-hidden border-b border-cyber-dark-400/50 bg-cyber-dark-100 cyber-grid">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-2xl px-5 sm:px-8 lg:px-10 py-8">
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10 py-8">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h1 className="text-2xl font-heading font-black text-text-primary">
@@ -65,7 +67,7 @@ export default function AdminAlumnosCrear({ alumno, editando }) {
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-2xl px-5 sm:px-8 lg:px-10 mt-6 pb-8">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-6 pb-8">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Flash Messages */}
                         {flash?.success && (

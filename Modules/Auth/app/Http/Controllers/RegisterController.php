@@ -26,7 +26,7 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'whatsapp_numero' => ['nullable', 'string', 'max:20'],
+            'whatsapp_numero' => ['nullable', 'string', 'max:20', new \App\Rules\WhatsappPeruRule],
         ]);
 
         $user = User::create([
@@ -35,7 +35,9 @@ class RegisterController extends Controller
             'password' => bcrypt($validated['password']),
             'rol' => 'estudiante',
             'estado' => 'pendiente',
-            'whatsapp_numero' => $validated['whatsapp_numero'] ?? null,
+            'whatsapp_numero' => isset($validated['whatsapp_numero']) && $validated['whatsapp_numero'] !== null
+                ? \App\Support\Telefono::normalizarWhatsApp($validated['whatsapp_numero'])
+                : null,
         ]);
 
         // Notificar a todos los admins que hay un nuevo alumno pendiente

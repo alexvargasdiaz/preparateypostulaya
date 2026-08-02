@@ -12,17 +12,13 @@
         .header p { color: #93c5fd; margin: 8px 0 0; font-size: 14px; }
         .badge { display: inline-block; background: rgba(201, 168, 76, 0.3); border: 1px solid rgba(201, 168, 76, 0.5); border-radius: 20px; padding: 4px 14px; font-size: 13px; color: #C9A84C; margin-bottom: 12px; font-weight: 600; }
         .body-card { background: #fff; border-radius: 0 0 16px 16px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-        .check-circle { width: 80px; height: 80px; border-radius: 50%; background: #dcfce7; border: 4px solid #22c55e; margin: 0 auto 16px; }
+        .check-circle { width: 80px; height: 80px; border-radius: 50%; background: #e0f2fe; border: 4px solid #38bdf8; margin: 0 auto 16px; }
         .check-icon { width: 80px; height: 80px; display: block; }
         .message { text-align: center; font-size: 16px; color: #374151; line-height: 1.6; margin: 20px 0; }
         .message strong { color: #1B3A5C; }
         .highlight-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center; }
         .highlight-box h3 { margin: 0 0 8px; color: #16a34a; font-size: 16px; }
         .highlight-box p { margin: 0; color: #374151; font-size: 14px; }
-        .features { margin: 24px 0; }
-        .feature-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
-        .feature-icon { font-size: 20px; }
-        .feature-text { font-size: 14px; color: #374151; }
         .btn { display: inline-block; background: #1B3A5C; color: #fff !important; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 14px; margin-top: 16px; }
         .btn:hover { background: #152d47; }
         .footer { text-align: center; padding: 24px; color: #9ca3af; font-size: 12px; }
@@ -46,8 +42,9 @@
         <div class="body-card">
             <div class="check-circle">
                 <svg class="check-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="40" cy="40" r="38" fill="#dcfce7" stroke="#22c55e" stroke-width="4"/>
-                    <path d="M24 40l10 10 22-22" stroke="#16a34a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="40" cy="40" r="38" fill="#e0f2fe" stroke="#38bdf8" stroke-width="4"/>
+                    <circle cx="40" cy="30" r="12" fill="#0284c7"/>
+                    <path d="M22 62c0-10 8-16 18-16s18 6 18 16" stroke="#0284c7" stroke-width="5" stroke-linecap="round"/>
                 </svg>
             </div>
 
@@ -60,25 +57,6 @@
             <div class="highlight-box">
                 <h3>Ya puedes empezar a practicar</h3>
                 <p>Tienes acceso completo a todos los simulacros disponibles.</p>
-            </div>
-
-            <div class="features">
-                <div class="feature-item">
-                    <span class="feature-icon">📝</span>
-                    <span class="feature-text">Simulacros de admisión reales</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">📊</span>
-                    <span class="feature-text">Resultados detallados por tema</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">📈</span>
-                    <span class="feature-text">Seguimiento de tu progreso</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">🏆</span>
-                    <span class="feature-text">Historial de intentos</span>
-                </div>
             </div>
 
             <div style="text-align:center; margin-top: 24px;">

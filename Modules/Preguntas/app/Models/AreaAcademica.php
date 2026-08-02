@@ -55,11 +55,6 @@ class AreaAcademica extends Model
         return $this->hasMany(Pregunta::class, 'area_academica_id')->where('activa', true);
     }
 
-    public function preguntasPorNivel(int $nivel): HasMany
-    {
-        return $this->preguntasActivas()->where('nivel', $nivel);
-    }
-
     public function totalPreguntas(): int
     {
         return $this->preguntasActivas()->count();

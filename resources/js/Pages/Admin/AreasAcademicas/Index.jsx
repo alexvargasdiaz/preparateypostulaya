@@ -68,7 +68,7 @@ export default function AreasAcademicas({ areas }) {
             <div className="min-h-screen bg-cyber-dark">
                 {/* Header */}
                 <div className="relative overflow-hidden border-b border-cyber-dark-400/50 bg-cyber-dark-100 cyber-grid">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,0,255,0.08),transparent_50%)]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
                     <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10 py-8">
                         <div className="flex items-center justify-between">
                             <div>
@@ -234,7 +234,7 @@ export default function AreasAcademicas({ areas }) {
                                             </div>
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input type="checkbox" checked={editForm.data.activo} onChange={(e) => editForm.setData('activo', e.target.checked)}
-                                                    className="h-4 w-4 rounded border-cyber-dark-400/50 text-neon-cyan bg-cyber-dark-300" />
+                                                    className="checkbox-neon" />
                                                 <span className="text-sm text-text-secondary">Activo</span>
                                             </label>
                                             <div className="flex justify-end gap-2 pt-2">

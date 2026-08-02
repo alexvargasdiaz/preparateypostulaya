@@ -2,10 +2,10 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import {
     Target, Play, Clock, CheckCircle2, ArrowRight, Brain,
-    Layers, Calendar, Award, AlertTriangle, BookOpen, ChevronRight
+    Layers, Calendar, Award, AlertTriangle, BookOpen, ChevronRight, HelpCircle
 } from 'lucide-react';
 
-export default function Index({ intentos, areas }) {
+export default function Index({ intentos, areas, totalPreguntas, duracionMinutos }) {
     const { flash } = usePage().props;
 
     const iniciarDiagnostico = () => {
@@ -23,7 +23,7 @@ export default function Index({ intentos, areas }) {
             <div className="min-h-screen bg-cyber-dark">
                 {/* Header */}
                 <div className="relative overflow-hidden border-b border-cyber-dark-400/50 bg-cyber-dark-100 cyber-grid">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,0,255,0.08),transparent_50%)]" />
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
                     <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10 py-8">
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                             <div className="flex items-center gap-5">
@@ -118,6 +118,16 @@ export default function Index({ intentos, areas }) {
                                 <ChevronRight className="ml-auto h-6 w-6 text-neon-magenta" />
                             </div>
                         </button>
+                        {duracionMinutos > 0 && (
+                            <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-cyber-dark-300 border border-cyber-dark-400/50 px-3 py-1.5 text-xs font-bold text-text-muted">
+                                    <Clock className="h-3.5 w-3.5 text-neon-magenta" /> Duración: {duracionMinutos} min
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-cyber-dark-300 border border-cyber-dark-400/50 px-3 py-1.5 text-xs font-bold text-text-muted">
+                                    <HelpCircle className="h-3.5 w-3.5 text-neon-cyan" /> {totalPreguntas} preguntas
+                                </span>
+                            </div>
+                        )}
                     </motion.div>
 
                     {/* Historial */}

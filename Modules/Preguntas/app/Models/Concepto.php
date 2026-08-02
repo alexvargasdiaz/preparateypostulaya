@@ -17,17 +17,9 @@ class Concepto extends Model
     protected $fillable = [
         'seccion_id',
         'area_academica_id',
-        'nivel',
         'nombre',
         'descripcion',
     ];
-
-    protected function casts(): array
-    {
-        return [
-            'nivel' => 'integer',
-        ];
-    }
 
     public function areaAcademica(): BelongsTo
     {

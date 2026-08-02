@@ -18,7 +18,7 @@ export default function Footer() {
                                 P
                             </div>
                             <h3 className="font-heading font-bold text-base neon-text-cyan">
-                                Prepárate y Postula
+                                Prepárate y Postula Ya
                             </h3>
                         </div>
                         <p className="mt-3 text-sm leading-relaxed text-text-muted font-sans">

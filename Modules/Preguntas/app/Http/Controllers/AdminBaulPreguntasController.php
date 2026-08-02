@@ -23,9 +23,6 @@ class AdminBaulPreguntasController extends Controller
         if ($request->filled('area_academica_id')) {
             $query->where('area_academica_id', $request->area_academica_id);
         }
-        if ($request->filled('nivel')) {
-            $query->where('nivel', $request->nivel);
-        }
         if ($request->filled('dificultad')) {
             $query->where('dificultad', $request->dificultad);
         }
@@ -40,9 +37,9 @@ class AdminBaulPreguntasController extends Controller
 
         $areas = AreaAcademica::where('activo', true)
             ->withCount(['preguntas as total_preguntas'])
-            ->withCount(['preguntas as preguntas_nivel_1' => fn ($q) => $q->where('nivel', 1)])
-            ->withCount(['preguntas as preguntas_nivel_2' => fn ($q) => $q->where('nivel', 2)])
-            ->withCount(['preguntas as preguntas_nivel_3' => fn ($q) => $q->where('nivel', 3)])
+            ->withCount(['preguntas as preguntas_facil' => fn ($q) => $q->where('dificultad', 'facil')])
+            ->withCount(['preguntas as preguntas_media' => fn ($q) => $q->where('dificultad', 'media')])
+            ->withCount(['preguntas as preguntas_dificil' => fn ($q) => $q->where('dificultad', 'dificil')])
             ->orderBy('nombre')
             ->get();
 
@@ -53,7 +50,7 @@ class AdminBaulPreguntasController extends Controller
             'preguntas' => $preguntas,
             'areas' => $areas,
             'conceptos' => $conceptos,
-            'filtros' => $request->only(['area_academica_id', 'nivel', 'dificultad', 'activa', 'busqueda']),
+            'filtros' => $request->only(['area_academica_id', 'dificultad', 'activa', 'busqueda']),
         ]);
     }
 
@@ -62,13 +59,11 @@ class AdminBaulPreguntasController extends Controller
         $validated = $request->validate([
             'pregunta_id' => 'required|integer|exists:preguntas,id',
             'area_academica_id' => 'nullable|integer|exists:areas_academicas,id',
-            'nivel' => 'nullable|integer|in:1,2,3',
         ]);
 
         $pregunta = Pregunta::findOrFail($validated['pregunta_id']);
         $pregunta->update([
             'area_academica_id' => $validated['area_academica_id'] ?? null,
-            'nivel' => $validated['nivel'] ?? null,
         ]);
 
         return response()->json(['success' => true]);
@@ -80,15 +75,11 @@ class AdminBaulPreguntasController extends Controller
             'preguntas_ids' => 'required|array',
             'preguntas_ids.*' => 'integer|exists:preguntas,id',
             'area_academica_id' => 'nullable|integer|exists:areas_academicas,id',
-            'nivel' => 'nullable|integer|in:1,2,3',
         ]);
 
         $data = [];
         if (isset($validated['area_academica_id'])) {
             $data['area_academica_id'] = $validated['area_academica_id'];
-        }
-        if (isset($validated['nivel'])) {
-            $data['nivel'] = $validated['nivel'];
         }
 
         Pregunta::whereIn('id', $validated['preguntas_ids'])->update($data);

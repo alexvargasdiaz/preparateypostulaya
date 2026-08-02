@@ -14,6 +14,7 @@ class DiagnosticoConcepto extends Model
     protected $fillable = [
         'concepto_id',
         'preguntas_por_concepto',
+        'duracion_minutos',
     ];
 
     public function concepto(): BelongsTo

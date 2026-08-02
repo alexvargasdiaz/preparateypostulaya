@@ -133,7 +133,7 @@ export default function AuthenticatedLayout({ children }) {
                         </div>
                         {!collapsed && (
                             <span className="text-sm font-heading font-bold neon-text-cyan leading-tight">
-                                Prepárate<br />y Postula
+                                Prepárate y Postula<br />Ya
                             </span>
                         )}
                     </Link>
@@ -238,7 +238,7 @@ export default function AuthenticatedLayout({ children }) {
                     </button>
                     <Link href="/dashboard" className="flex items-center gap-2 text-sm font-bold text-text-primary">
                         <div className="cyber-logo-sidebar" style={{ width: 28, height: 28, fontSize: '0.75rem' }}>P</div>
-                        Prepárate y Postula
+                        Prepárate y Postula Ya
                     </Link>
                 </header>
 

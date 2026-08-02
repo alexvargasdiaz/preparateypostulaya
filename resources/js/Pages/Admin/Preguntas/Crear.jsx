@@ -10,7 +10,6 @@ export default function AdminPreguntasCrear({ areas, conceptos, pregunta, editan
 
     const [areaId, setAreaId] = useState(pregunta?.area_academica_id || '');
     const [conceptoId, setConceptoId] = useState(pregunta?.concepto_id || '');
-    const [nivel, setNivel] = useState(pregunta?.nivel || '');
     const [enunciado, setEnunciado] = useState(pregunta?.enunciado || '');
     const [enunciadoImagen, setEnunciadoImagen] = useState(pregunta?.enunciado_imagen_url || '');
     const [subiendoEnunciado, setSubiendoEnunciado] = useState(false);
@@ -73,7 +72,7 @@ export default function AdminPreguntasCrear({ areas, conceptos, pregunta, editan
             showAlert('Todas las alternativas deben tener texto.', { title: 'Validación' }); return;
         }
         const data = {
-            area_academica_id: areaId, concepto_id: conceptoId, nivel: nivel || null, enunciado, dificultad, tipo: 'opcion_multiple',
+            area_academica_id: areaId, concepto_id: conceptoId, enunciado, dificultad, tipo: 'opcion_multiple',
             enunciado_imagen_url: enunciadoImagen || null,
             alternativas: alternativas.map((a) => ({ id: a.id, texto: a.texto, imagen_url: a.imagen_url || null, es_correcta: a.es_correcta, orden: a.orden })),
         };
@@ -88,9 +87,9 @@ export default function AdminPreguntasCrear({ areas, conceptos, pregunta, editan
         <>
             <Head title={editando ? 'Editar Pregunta' : 'Nueva Pregunta'} />
             <div className="min-h-screen bg-cyber-dark">
-                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/15 via-cyber-dark-100 to-cyber-dark py-8">
+                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/15 via-cyber-dark-100 to-cyber-dark py-8 cyber-grid">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.1),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-4xl px-5 sm:px-8 lg:px-10">
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className="flex items-center justify-between">
                             <div>
                                 <div className="cyber-badge cyber-badge-cyan rounded-lg px-4 py-1.5 text-sm font-bold inline-flex mb-3">
@@ -104,7 +103,7 @@ export default function AdminPreguntasCrear({ areas, conceptos, pregunta, editan
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-4xl px-5 sm:px-8 lg:px-10 mt-4 pb-8">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-4 pb-8">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {flash?.success && (
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -131,13 +130,6 @@ export default function AdminPreguntasCrear({ areas, conceptos, pregunta, editan
                                         {conceptosFiltrados.map((c) => (<option key={c.id} value={c.id}>{c.nombre}</option>))}
                                     </select>
                                     {errors?.concepto_id && <p className="mt-1 text-xs text-neon-cyan/80">{errors.concepto_id}</p>}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-text-secondary mb-1">Nivel <span className="text-text-muted font-normal">(opcional)</span></label>
-                                    <select value={nivel} onChange={(e) => setNivel(e.target.value)} className="w-full cyber-input rounded-xl px-4 py-2.5 text-sm">
-                                        <option value="">Sin nivel</option>
-                                        <option value="1">Nivel 1</option><option value="2">Nivel 2</option><option value="3">Nivel 3</option>
-                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-text-secondary mb-1">Dificultad</label>

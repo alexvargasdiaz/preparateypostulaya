@@ -34,8 +34,8 @@ export default function AdminCategoriasCrear({ instituciones, areas, categoria, 
             <div className="min-h-screen bg-cyber-dark">
                 {/* Header */}
                 <div className="relative overflow-hidden border-b border-cyber-dark-400/50 bg-cyber-dark-100 cyber-grid">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,0,255,0.08),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-2xl px-5 sm:px-8 lg:px-10 py-8">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10 py-8">
                         <div className="flex items-center justify-between">
                             <div>
                                 <div className="inline-flex items-center gap-2 rounded-full bg-neon-magenta/10 border border-neon-magenta/30 px-4 py-1.5 text-sm font-bold text-neon-cyan mb-3">
@@ -53,7 +53,7 @@ export default function AdminCategoriasCrear({ instituciones, areas, categoria, 
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-2xl px-5 sm:px-8 lg:px-10 mt-6 pb-8">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-6 pb-8">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         {flash?.success && (
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}

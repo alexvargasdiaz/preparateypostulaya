@@ -267,7 +267,7 @@ export default function RendirDiagnostico({ intento, preguntas, areas, tiempoRes
 
             {/* Main content */}
             <div className="pt-24 pb-32 px-3 sm:px-6 lg:pl-28 min-h-screen bg-cyber-dark cyber-grid">
-                <div className="mx-auto max-w-4xl">
+                <div className="mx-auto max-w-full">
                     {/* Concept badge and progress */}
                     <div className="mb-6 flex items-center gap-3">
                         <div className="cyber-badge cyber-badge-magenta rounded-lg px-3 py-1.5">

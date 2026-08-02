@@ -61,7 +61,7 @@ class PerfilTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id' => $this->usuario->id,
             'name' => 'Carlos Actualizado',
-            'whatsapp_numero' => '999111222',
+            'whatsapp_numero' => '+51999111222',
         ]);
     }
 

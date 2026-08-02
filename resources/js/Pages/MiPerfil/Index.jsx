@@ -5,6 +5,7 @@ import {
     User, Mail, Phone, Lock, Save, CheckCircle2, AlertTriangle,
     Shield, Calendar, Eye, EyeOff, Camera, X, Image
 } from 'lucide-react';
+import { normalizarWhatsApp } from '@/lib/utils';
 
 export default function MiPerfil({ usuario }) {
     const { errors, flash } = usePage().props;
@@ -53,9 +54,10 @@ export default function MiPerfil({ usuario }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (whatsapp && !normalizarWhatsApp(whatsapp)) return;
         setSubmitting(true);
         router.put('/mi-perfil', {
-            name, email, whatsapp_numero: whatsapp || null,
+            name, email, whatsapp_numero: normalizarWhatsApp(whatsapp) || null,
             current_password: currentPassword || null,
             new_password: newPassword || null,
             new_password_confirmation: newPasswordConfirmation || null,

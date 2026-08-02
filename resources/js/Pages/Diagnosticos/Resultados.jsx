@@ -52,6 +52,9 @@ function RadarChart({ areas, size = 280 }) {
 }
 
 export default function Resultados({ intento, puntajePorArea, puntajePorConcepto, puntajeTotalEstudiante, carrerasCompatibles, carrerasNoCompatibles }) {
+    const materiasDebiles = (puntajePorConcepto ?? []).filter((m) => m.porcentaje < 60);
+    const materiasLogradas = (puntajePorConcepto ?? []).filter((m) => m.porcentaje >= 60);
+    const nivelEsperado = 60;
     return (
         <>
             <Head title="Resultados del Diagnóstico" />
@@ -255,6 +258,60 @@ export default function Resultados({ intento, puntajePorArea, puntajePorConcepto
                                     );
                                 })}
                             </div>
+                        </motion.div>
+                    )}
+
+                    {/* Cuánto te falta estudiar */}
+                    {materiasDebiles.length > 0 && (
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+                            className="cyber-card rounded-xl border-neon-magenta/20 p-5 mb-6">
+                            <div className="flex items-center gap-2 mb-1">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neon-magenta/10 border border-neon-magenta/30">
+                                    <BookOpen className="h-4 w-4 text-neon-magenta" />
+                                </div>
+                                <h2 className="text-sm font-heading font-bold text-neon-magenta neon-text">
+                                    ¿Cuánto te falta estudiar?
+                                </h2>
+                            </div>
+                            <p className="text-xs font-semibold text-text-muted mb-4">
+                                Para alcanzar el nivel esperado ({nivelEsperado}%) en cada materia, enfócate en reforzar las
+                                {materiasDebiles.length === 1 ? ' materia ' : ' siguientes materias '} donde obtuviste menor puntaje:
+                            </p>
+                            <div className="space-y-3">
+                                {materiasDebiles.map((m) => {
+                                    const faltante = Math.max(0, nivelEsperado - m.porcentaje);
+                                    return (
+                                        <div key={m.concepto_id} className="rounded-xl border border-neon-magenta/20 bg-cyber-dark-200 p-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="min-w-0 pr-3">
+                                                    <p className="font-heading font-bold text-text-primary truncate">{m.nombre}</p>
+                                                    <p className="text-xs font-semibold text-text-muted">
+                                                        Obtuviste {m.correctas} de {m.total} correctas ({m.porcentaje}%)
+                                                    </p>
+                                                </div>
+                                                <span className="flex-shrink-0 rounded-full bg-neon-magenta/10 border border-neon-magenta/30 px-3 py-1 text-xs font-heading font-bold text-neon-magenta">
+                                                    Te falta {faltante}%
+                                                </span>
+                                            </div>
+                                            <div className="mt-3 h-2 w-full rounded-full bg-cyber-dark-300 overflow-hidden border border-cyber-dark-400/30">
+                                                <div className="h-full rounded-full bg-gradient-to-r from-neon-magenta to-neon-yellow transition-all duration-700"
+                                                    style={{ width: `${m.porcentaje}%`, boxShadow: '0 0 8px rgba(255,0,255,0.3)' }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <p className="mt-4 text-xs font-semibold text-text-muted leading-relaxed">
+                                {materiasDebiles.length > 0 && (
+                                    <>
+                                        <strong className="text-neon-magenta">Tu plan:</strong> dedica más tiempo a{' '}
+                                        <strong className="text-text-primary">{materiasDebiles.map(m => m.nombre).join(', ')}</strong>.
+                                        {materiasLogradas.length > 0 && (
+                                            <> Sigue así con <strong className="text-neon-cyan">{materiasLogradas.map(m => m.nombre).join(', ')}</strong>.</>
+                                        )}
+                                    </>
+                                )}
+                            </p>
                         </motion.div>
                     )}
 

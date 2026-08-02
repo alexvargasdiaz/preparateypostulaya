@@ -38,9 +38,9 @@ export default function AdminAlumnosIndex({ alumnos, filtros }) {
         <>
             <Head title="Admin - Alumnos" />
             <div className="min-h-screen bg-cyber-dark">
-                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/15 via-cyber-dark-100 to-cyber-dark py-8">
+                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/15 via-cyber-dark-100 to-cyber-dark py-8 cyber-grid">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.1),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <div className="cyber-badge cyber-badge-cyan rounded-lg px-4 py-1.5 text-sm font-bold inline-flex mb-3"><Sparkles className="h-4 w-4" /> Alumnos</div>
@@ -59,7 +59,7 @@ export default function AdminAlumnosIndex({ alumnos, filtros }) {
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:px-10 mt-4 pb-8">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-4 pb-8">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="cyber-card rounded-xl p-4 mb-6">
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <div className="relative flex-1">
@@ -98,14 +98,14 @@ export default function AdminAlumnosIndex({ alumnos, filtros }) {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-cyber-dark-400/20">
-                                        {alumnos.data.map((u) => {
+                                        {alumnos.data.map((u, idx) => {
                                             const estilo = estadoEstilos[u.estado] || estadoEstilos.pendiente;
                                             const StatusIcon = estilo.Icon;
                                             return (
                                                 <tr key={u.id} className="transition-all hover:bg-cyber-dark-300/30">
                                                     <td className="px-5 py-4">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-neon-cyan to-neon-magenta text-xs font-bold text-white shadow-[0_0_8px_rgba(0,240,255,0.3)]">
+                                                            <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${idx % 2 === 0 ? 'bg-neon-cyan/15 text-neon-cyan ring-1 ring-neon-cyan/40 shadow-neon-cyan' : 'bg-neon-magenta/15 text-neon-magenta ring-1 ring-neon-magenta/40 shadow-neon-magenta'}`}>
                                                                 {u.name?.charAt(0)?.toUpperCase() || '?'}
                                                             </div>
                                                             <span className="text-sm font-bold text-text-primary">{u.name}</span>

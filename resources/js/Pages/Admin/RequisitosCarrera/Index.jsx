@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { useDialog } from '@/Components/DialogProvider';
 import {
     GraduationCap, Building2, Target, Trash2, Save, CheckCircle2,
-    AlertTriangle, Plus, Search, Settings, X, Trophy
+    AlertTriangle, Plus, Search, Settings, X, Trophy, Sparkles
 } from 'lucide-react';
 
 export default function Index({ categorias, instituciones, conceptos, filtros, flash }) {
@@ -111,18 +111,17 @@ export default function Index({ categorias, instituciones, conceptos, filtros, f
         <>
             <Head title="Requisitos por Carrera" />
 
-            <div className="min-h-screen bg-[#0b0f17]">
-                <div className="relative py-8 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(0,240,255,0.15), rgba(255,0,255,0.08))' }}>
-                    <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'url(https://www.transparenttextures.com/patterns/cubes.png)' }} />
-                    <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 50%, rgba(0,240,255,0.1) 0%, transparent 60%), radial-gradient(ellipse at 70% 50%, rgba(255,0,255,0.08) 0%, transparent 60%)' }} />
+            <div className="min-h-screen bg-cyber-dark">
+                <div className="relative overflow-hidden bg-gradient-to-br from-neon-cyan/15 via-cyber-dark-100 to-cyber-dark py-8 cyber-grid">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
                     <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-neon-cyan/30 bg-neon-cyan/10 shadow-neon-cyan">
-                                <Target className="h-6 w-6 text-neon-cyan" />
-                            </div>
+                        <div className="flex items-center justify-between">
                             <div>
-                                <h1 className="text-2xl font-bold neon-text-strong-cyan">Requisitos por Carrera</h1>
-                                <p className="text-sm text-neon-cyan/60">Configura los puntajes mínimos para que los estudiantes alcancen cada carrera</p>
+                                <div className="cyber-badge cyber-badge-cyan rounded-lg px-4 py-1.5 text-sm font-bold inline-flex mb-3">
+                                    <Sparkles className="h-4 w-4" /> Requisitos
+                                </div>
+                                <h1 className="text-2xl font-heading font-black text-text-primary">Requisitos por Carrera</h1>
+                                <p className="mt-1 text-sm font-semibold text-text-muted">Configura los puntajes mínimos para que los estudiantes alcancen cada carrera</p>
                             </div>
                         </div>
                     </div>
@@ -137,7 +136,7 @@ export default function Index({ categorias, instituciones, conceptos, filtros, f
                     )}
 
                     {/* Filtros */}
-                    <div className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-neon-cyan/20 bg-[rgba(11,15,23,0.85)] p-5 shadow-neon-cyan backdrop-blur-sm">
+                    <div className="mb-6 cyber-card rounded-xl flex flex-wrap items-end gap-4 p-5">
                         <div className="flex-1 min-w-[200px]">
                             <label className="block text-sm font-medium text-neon-cyan/70 mb-1">Institución</label>
                             <select value={institucionId} onChange={(e) => { setInstitucionId(e.target.value); }}
@@ -166,14 +165,14 @@ export default function Index({ categorias, instituciones, conceptos, filtros, f
                     {/* Lista de carreras */}
                     <div className="space-y-3">
                         {categoriasFiltradas.length === 0 ? (
-                            <div className="rounded-2xl border border-neon-cyan/10 bg-[rgba(11,15,23,0.85)] p-12 text-center shadow-neon-cyan">
+                            <div className="cyber-card rounded-xl p-12 text-center">
                                 <GraduationCap className="mx-auto h-12 w-12 text-neon-cyan/30" />
                                 <p className="mt-3 text-neon-cyan/50">No se encontraron carreras con los filtros seleccionados.</p>
                             </div>
                         ) : (
                             categoriasFiltradas.map((cat) => (
                                 <motion.div key={cat.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                    className="rounded-2xl border border-neon-cyan/20 bg-[rgba(11,15,23,0.85)] shadow-neon-cyan overflow-hidden backdrop-blur-sm">
+                                    className="cyber-card rounded-xl overflow-hidden">
                                     <div className="flex items-center justify-between p-5">
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-cyan/10 text-neon-cyan shadow-neon-cyan">

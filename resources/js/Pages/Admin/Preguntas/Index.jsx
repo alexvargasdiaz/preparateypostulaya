@@ -36,9 +36,9 @@ export default function AdminPreguntasIndex({ preguntas, areas, conceptos, filtr
         <>
             <Head title="Admin - Preguntas" />
             <div className="min-h-screen bg-cyber-dark">
-                <div className="relative overflow-hidden bg-gradient-to-br from-neon-magenta/15 via-cyber-dark-100 to-cyber-dark py-8">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,0,255,0.08),transparent_50%)]" />
-                    <div className="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
+                <div className="relative overflow-hidden bg-gradient-to-br from-neon-magenta/15 via-cyber-dark-100 to-cyber-dark py-8 cyber-grid">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,240,255,0.08),transparent_50%)]" />
+                    <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <div className="cyber-badge cyber-badge-magenta rounded-lg px-4 py-1.5 text-sm font-bold inline-flex mb-3">
@@ -56,10 +56,10 @@ export default function AdminPreguntasIndex({ preguntas, areas, conceptos, filtr
                     </div>
                 </div>
 
-                <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:px-10 mt-4 pb-8">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 mt-4 pb-8">
                     <div className="cyber-card rounded-xl p-4 mb-6">
-                        <div className="grid gap-3 sm:grid-cols-5">
-                            <div className="relative sm:col-span-2">
+                        <div className="flex flex-wrap items-end gap-3">
+                            <div className="relative flex-1 min-w-[200px]">
                                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
                                 <input type="text" placeholder="Buscar..." value={busqueda}
                                     onChange={(e) => setBusqueda(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && aplicarFiltros()}
@@ -78,7 +78,7 @@ export default function AdminPreguntasIndex({ preguntas, areas, conceptos, filtr
                                 <option value="">Todas</option>
                                 <option value="facil">Fácil</option><option value="media">Media</option><option value="dificil">Difícil</option>
                             </select>
-                            <button onClick={aplicarFiltros} className="cyber-btn cyber-btn-primary rounded-xl px-5 py-2.5 text-sm font-bold sm:col-span-1">Filtrar</button>
+                            <button onClick={aplicarFiltros} className="cyber-btn cyber-btn-primary rounded-xl px-5 py-2.5 text-sm font-bold">Filtrar</button>
                         </div>
                     </div>
 
@@ -99,7 +99,6 @@ export default function AdminPreguntasIndex({ preguntas, areas, conceptos, filtr
                                                 <Layers className="h-3.5 w-3.5 text-neon-cyan" /> {p.area_academica?.nombre || 'Sin área'}
                                                 <span className="text-cyber-dark-400">—</span>
                                                 <BookOpen className="h-3.5 w-3.5 text-neon-magenta" /> {p.concepto?.nombre || 'Sin curso'}
-                                                {p.nivel && <><span className="text-cyber-dark-400">—</span><span className="rounded-lg bg-neon-cyan/10 border border-neon-cyan/30 px-2 py-0.5 text-[10px] font-bold text-neon-cyan">N{p.nivel}</span></>}
                                             </div>
                                             <p className="text-sm text-text-primary line-clamp-2">{p.enunciado}</p>
                                             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -109,7 +108,7 @@ export default function AdminPreguntasIndex({ preguntas, areas, conceptos, filtr
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                            <Link href={`/admin/preguntas/${p.id}/editar`}
+                                            <Link href={`/admin/preguntas/${p.id}/edit`}
                                                 className="inline-flex items-center gap-1 rounded-lg bg-neon-cyan/10 border border-neon-cyan/30 px-3 py-1.5 text-xs font-bold text-neon-cyan hover:bg-neon-cyan/20"><Pencil className="h-3.5 w-3.5" /> Editar</Link>
                                             <button onClick={() => eliminarPregunta(p.id)}
                                                 className="inline-flex items-center rounded-lg bg-neon-magenta/10 border border-neon-magenta/30 px-2.5 py-1.5 text-xs font-bold text-neon-magenta hover:bg-neon-magenta/20"><Trash2 className="h-3.5 w-3.5" /></button>

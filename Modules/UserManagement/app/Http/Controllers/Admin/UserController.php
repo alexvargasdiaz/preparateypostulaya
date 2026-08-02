@@ -75,7 +75,7 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'rol' => ['required', 'string', 'in:super_admin,admin,estudiante'],
-            'whatsapp_numero' => ['nullable', 'string', 'max:20'],
+            'whatsapp_numero' => ['nullable', 'string', 'max:20', new \App\Rules\WhatsappPeruRule],
         ]);
 
         User::create([
@@ -83,7 +83,9 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
             'rol' => $validated['rol'],
-            'whatsapp_numero' => $validated['whatsapp_numero'] ?? null,
+            'whatsapp_numero' => isset($validated['whatsapp_numero']) && $validated['whatsapp_numero'] !== null
+                ? \App\Support\Telefono::normalizarWhatsApp($validated['whatsapp_numero'])
+                : null,
             'estado' => 'activo',
             'fecha_aprobacion' => now(),
             'aprobado_por' => auth()->id(),
@@ -165,14 +167,16 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($id)],
             'password' => ['nullable', 'string', 'min:8'],
             'rol' => ['required', 'string', 'in:super_admin,admin,estudiante'],
-            'whatsapp_numero' => ['nullable', 'string', 'max:20'],
+            'whatsapp_numero' => ['nullable', 'string', 'max:20', new \App\Rules\WhatsappPeruRule],
         ]);
 
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'rol' => $validated['rol'],
-            'whatsapp_numero' => $validated['whatsapp_numero'] ?? null,
+            'whatsapp_numero' => isset($validated['whatsapp_numero']) && $validated['whatsapp_numero'] !== null
+                ? \App\Support\Telefono::normalizarWhatsApp($validated['whatsapp_numero'])
+                : null,
         ];
 
         // Solo actualizar contraseña si se proporcionó una nueva

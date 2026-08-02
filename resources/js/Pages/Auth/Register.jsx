@@ -1,13 +1,22 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { motion } from 'motion/react';
 import { GraduationCap, Mail, Lock, User, Phone, BookOpen, BarChart3, Gift, Sparkles, ArrowRight } from 'lucide-react';
+import { normalizarWhatsApp } from '@/lib/utils';
 
 export default function Register({ errors, flash }) {
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, processing, transform } = useForm({
         name: '', email: '', password: '', password_confirmation: '', whatsapp_numero: '',
     });
 
-    const handleSubmit = (e) => { e.preventDefault(); post('/register'); };
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (data.whatsapp_numero && !normalizarWhatsApp(data.whatsapp_numero)) return;
+        transform((values) => ({
+            ...values,
+            whatsapp_numero: normalizarWhatsApp(values.whatsapp_numero),
+        }));
+        post('/register');
+    };
 
     const features = [
         { icon: BookOpen, title: 'Simulacros ilimitados', desc: 'Practica todas las veces que necesites' },
@@ -21,11 +30,11 @@ export default function Register({ errors, flash }) {
             <div className="min-h-screen bg-cyber-dark flex cyber-grid">
                 {/* Left - Brand Panel */}
                 <div className="hidden lg:flex lg:w-1/2 relative bg-cyber-dark-100 items-center justify-center p-12 overflow-hidden">
-                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 25% 50%, rgba(255,0,255,0.3) 0%, transparent 50%), radial-gradient(circle at 75% 50%, rgba(0,240,255,0.2) 0%, transparent 50%)' }} />
+                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 25% 50%, rgba(0,240,255,0.3) 0%, transparent 50%), radial-gradient(circle at 75% 50%, rgba(0,240,255,0.2) 0%, transparent 50%)' }} />
                     <div className="relative max-w-md">
                         <Link href="/" className="inline-flex items-center gap-3 mb-10 group">
                             <div className="cyber-logo" style={{width:44,height:44,fontSize:'1.3rem'}}>P</div>
-                            <span className="text-xl font-heading font-bold text-text-primary neon-text-cyan">Prepárate y Postula</span>
+                            <span className="text-xl font-heading font-bold text-text-primary neon-text-cyan">Prepárate y Postula Ya</span>
                         </Link>
                         <div className="cyber-badge cyber-badge-magenta rounded-lg px-4 py-2 mb-6 inline-flex">
                             <GraduationCap className="h-4 w-4" />
@@ -46,7 +55,7 @@ export default function Register({ errors, flash }) {
                                 </div>
                             ))}
                         </div>
-                        <p className="mt-16 text-sm text-text-muted">© {new Date().getFullYear()} Prepárate y Postula</p>
+                        <p className="mt-16 text-sm text-text-muted">© {new Date().getFullYear()} Prepárate y Postula Ya</p>
                     </div>
                 </div>
 
@@ -56,7 +65,7 @@ export default function Register({ errors, flash }) {
                         <div className="text-center mb-8 lg:hidden">
                             <Link href="/" className="inline-flex items-center gap-2 font-heading font-bold text-xl">
                                 <div className="cyber-logo" style={{width:32,height:32,fontSize:'0.85rem'}}>P</div>
-                                <span className="neon-text-cyan">Prepárate y Postula</span>
+                                <span className="neon-text-cyan">Prepárate y Postula Ya</span>
                             </Link>
                             <p className="mt-2 text-sm text-text-secondary">Crea tu cuenta para empezar</p>
                         </div>

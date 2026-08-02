@@ -27,14 +27,14 @@ Route::middleware(['auth'])->group(function () {
         }
 
         $request->validate([
-            'whatsapp_numero' => ['required', 'string', 'max:20'],
+            'whatsapp_numero' => ['required', 'string', 'max:20', new \App\Rules\WhatsappPeruRule],
         ]);
 
         $user->update([
-            'whatsapp_numero' => $request->whatsapp_numero,
+            'whatsapp_numero' => \App\Support\Telefono::normalizarWhatsApp($request->whatsapp_numero),
         ]);
 
-        return back()->with('success', 'Número de WhatsApp registrado correctamente.');
+        return back();
     })->name('pendiente.whatsapp');
 });
 

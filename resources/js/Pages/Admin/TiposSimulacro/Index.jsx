@@ -240,7 +240,7 @@ export default function TiposSimulacro({ area, tipos }) {
                                             </div>
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input type="checkbox" checked={editForm.data.activo} onChange={(e) => editForm.setData('activo', e.target.checked)}
-                                                    className="h-4 w-4 rounded border-cyber-dark-400/50 text-neon-magenta bg-cyber-dark-300" />
+                                                    className="checkbox-neon" />
                                                 <span className="text-sm text-text-secondary">Activo</span>
                                             </label>
                                             <div className="flex justify-end gap-2 pt-2">

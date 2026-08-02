@@ -18,7 +18,6 @@ class Pregunta extends Model
     protected $fillable = [
         'examen_id',
         'area_academica_id',
-        'nivel',
         'seccion_id',
         'concepto_id',
         'enunciado',
@@ -33,7 +32,6 @@ class Pregunta extends Model
     {
         return [
             'orden' => 'integer',
-            'nivel' => 'integer',
             'activa' => 'boolean',
         ];
     }

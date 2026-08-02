@@ -69,7 +69,7 @@ class AdminAlumnoController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
-            'whatsapp_numero' => ['nullable', 'string', 'max:20'],
+            'whatsapp_numero' => ['nullable', 'string', 'max:20', new \App\Rules\WhatsappPeruRule],
         ]);
 
         User::create([
@@ -77,7 +77,9 @@ class AdminAlumnoController extends Controller
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
             'rol' => 'estudiante',
-            'whatsapp_numero' => $validated['whatsapp_numero'] ?? null,
+            'whatsapp_numero' => isset($validated['whatsapp_numero']) && $validated['whatsapp_numero'] !== null
+                ? \App\Support\Telefono::normalizarWhatsApp($validated['whatsapp_numero'])
+                : null,
             'estado' => 'activo',
             'fecha_aprobacion' => now(),
             'aprobado_por' => auth()->id(),
@@ -111,13 +113,15 @@ class AdminAlumnoController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($id)],
             'password' => ['nullable', 'string', 'min:8'],
-            'whatsapp_numero' => ['nullable', 'string', 'max:20'],
+            'whatsapp_numero' => ['nullable', 'string', 'max:20', new \App\Rules\WhatsappPeruRule],
         ]);
 
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'whatsapp_numero' => $validated['whatsapp_numero'] ?? null,
+            'whatsapp_numero' => isset($validated['whatsapp_numero']) && $validated['whatsapp_numero'] !== null
+                ? \App\Support\Telefono::normalizarWhatsApp($validated['whatsapp_numero'])
+                : null,
         ];
 
         if (!empty($validated['password'])) {

@@ -10,11 +10,11 @@ use Modules\Auth\Http\Controllers\RegisterController;
 
 // ─── Login local (email/contraseña) ────────────────────────────
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
+Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
 
 // ─── Registro local ────────────────────────────────────────────
 Route::get('/register', [RegisterController::class, 'showForm'])->name('register');
-Route::post('/register', [RegisterController::class, 'register']);
+Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:register');
 
 // ─── Autenticación con Google ──────────────────────────────────
 Route::prefix('auth')->name('auth.')->group(function () {

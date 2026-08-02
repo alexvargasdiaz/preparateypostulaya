@@ -506,7 +506,7 @@ export default function RendirExamen({ intento, institucion, preguntas, tiempoRe
 
             {/* Main Content */}
             <main className="min-h-screen bg-cyber-dark">
-                <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:px-10 pt-20 pb-32 lg:pt-28">
+                <div className="mx-auto max-w-full px-5 sm:px-8 lg:px-10 pt-20 pb-32 lg:pt-28">
                     {/* Exam info badges */}
                     <div className="mb-6 flex items-center gap-2 flex-wrap">
                         <span className="cyber-badge cyber-badge-cyan rounded-lg px-3 py-1 text-[10px] font-bold uppercase tracking-widest">

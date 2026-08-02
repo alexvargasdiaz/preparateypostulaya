@@ -50,7 +50,7 @@ class AuthRegisterTest extends TestCase
             'name' => 'Nuevo Alumno',
             'rol' => 'estudiante',
             'estado' => 'pendiente',
-            'whatsapp_numero' => '999888777',
+            'whatsapp_numero' => '+51999888777',
         ]);
 
         $this->assertAuthenticated();

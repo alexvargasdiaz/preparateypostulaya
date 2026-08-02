@@ -76,7 +76,7 @@ export default function NotificacionesPage({ notificaciones, preferencias, noLei
 
             <div className="min-h-screen bg-cyber-dark">
                 {/* Header */}
-                <div className="relative overflow-hidden bg-gradient-to-r from-[#0a0e1a] via-[#0f1525] to-[#0a0e1a] py-8">
+                <div className="relative overflow-hidden bg-gradient-to-r from-[#0a0e1a] via-[#0f1525] to-[#0a0e1a] py-8 cyber-grid">
                     <div className="absolute inset-0" style={{ backgroundImage: 'url(https://www.transparenttextures.com/patterns/cubes.png)', opacity: 0.05 }} />
                     <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
