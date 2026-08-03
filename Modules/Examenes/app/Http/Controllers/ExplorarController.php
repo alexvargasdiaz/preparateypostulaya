@@ -9,7 +9,9 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Modules\Catalogo\Models\Institucion;
 use Modules\Catalogo\Models\Categoria;
-use Modules\Catalogo\Models\Examen;
+use Modules\Preguntas\Models\AreaAcademica;
+use Modules\Preguntas\Models\TipoSimulacro;
+use Modules\Rendicion\Models\IntentoExamen;
 
 class ExplorarController extends Controller
 {
@@ -22,17 +24,16 @@ class ExplorarController extends Controller
     }
 
     /**
-     * Explora simulacros por universidad: Universidad → Carrera → Examen.
+     * Explora simulacros por universidad: Universidad → Área Académica → Tipo de simulacro.
      */
     public function universidades(Request $request)
     {
         $institucionId = $request->query('institucion_id');
-        $categoriaId = $request->query('categoria_id');
+        $areaId = $request->query('area_id');
 
-        // ─── Todas las universidades activas con exámenes disponibles ──
+        // ─── Todas las universidades activas ──────────────────────
         $instituciones = Institucion::where('activo', true)
-            ->whereHas('categorias.examenes', fn ($q) => $q->where('activo', true))
-            ->withCount(['categorias' => fn ($q) => $q->whereHas('examenes', fn ($e) => $e->where('activo', true))])
+            ->withCount(['categorias' => fn ($q) => $q->where('activo', true)])
             ->orderBy('nombre')
             ->get()
             ->map(fn ($i) => [
@@ -43,67 +44,93 @@ class ExplorarController extends Controller
                 'categorias_count' => $i->categorias_count,
             ]);
 
-        // ─── Carreras (categorías) de la universidad seleccionada ──
-        $categorias = collect();
-        if ($institucionId) {
-            $categorias = Categoria::where('institucion_id', $institucionId)
-                ->whereHas('examenes', fn ($q) => $q->where('activo', true))
-                ->withCount(['examenes' => fn ($q) => $q->where('activo', true)])
+        // ─── Áreas académicas de la universidad seleccionada ───────
+        $areas = collect();
+        $institucionSel = $institucionId
+            ? Institucion::find($institucionId)
+            : null;
+
+        if ($institucionSel) {
+            $areas = AreaAcademica::where('activo', true)
+                ->withCount(['preguntas as preguntas_propias' => function ($q) use ($institucionId) {
+                    $q->where('activa', true)->where('institucion_id', $institucionId);
+                }])
+                ->withCount(['preguntas as preguntas_globales' => fn ($q) => $q->where('activa', true)->whereNull('institucion_id')])
+                ->withCount(['tiposSimulacroActivos as tipos_count'])
+                ->orderBy('nombre')
+                ->get()
+                ->filter(fn ($a) => $a->preguntas_propias > 0 || $a->preguntas_globales > 0)
+                ->map(fn ($a) => [
+                    'id' => $a->id,
+                    'nombre' => $a->nombre,
+                    'descripcion' => $a->descripcion,
+                    // Total de preguntas que se usarían para el simulacro
+                    'total_preguntas' => $a->preguntas_propias > 0 ? $a->preguntas_propias : $a->preguntas_globales,
+                    'usa_banco_propio' => $a->preguntas_propias > 0,
+                    'tipos_count' => $a->tipos_count,
+                ]);
+        }
+
+        // ─── Tipos de simulacro disponibles para universidad + área ──
+        $tipos = collect();
+        if ($institucionSel && $areaId) {
+            $tipos = TipoSimulacro::where('area_academica_id', $areaId)
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->get()
+                ->map(fn ($t) => [
+                    'id' => $t->id,
+                    'nombre' => $t->nombre,
+                    'descripcion' => $t->descripcion,
+                    'num_preguntas' => $t->num_preguntas,
+                    'duracion_min' => $t->duracion_min,
+                ]);
+        }
+
+        // ─── Carreras de la universidad (para el modal de postulación) ──
+        // Prioriza las carreras del área académica seleccionada.
+        $carreras = collect();
+        if ($institucionSel) {
+            $carreras = Categoria::where('institucion_id', $institucionId)
+                ->where('activo', true)
+                ->with('areaAcademica:id,nombre')
+                ->orderByRaw('CASE WHEN area_academica_id = ? THEN 0 ELSE 1 END', [$areaId])
                 ->orderBy('nombre')
                 ->get()
                 ->map(fn ($c) => [
                     'id' => $c->id,
                     'nombre' => $c->nombre,
-                    'descripcion_corta' => $c->descripcion_corta,
-                    'examenes_count' => $c->examenes_count,
+                    'area_academica_id' => $c->area_academica_id,
+                    'area_nombre' => $c->areaAcademica?->nombre,
                 ]);
         }
 
-        // ─── Exámenes disponibles para la universidad + carrera ──
-        $examenes = collect();
-        if ($institucionId && $categoriaId) {
-            $examenes = Examen::with('categoria.institucion')
-                ->where('categoria_id', $categoriaId)
-                ->where('activo', true)
-                ->withCount(['preguntasDelExamen as preguntas_count' => fn ($q) => $q->where('activa', true)])
-                ->orderBy('titulo')
-                ->get()
-                ->map(fn ($e) => [
-                    'id' => $e->id,
-                    'titulo' => $e->titulo,
-                    'descripcion' => $e->descripcion,
-                    'tiempo_limite_min' => $e->tiempo_limite_min,
-                    'preguntas_count' => $e->preguntas_count,
-                    'categoria' => $e->categoria?->only(['id', 'nombre']),
-                    'institucion' => $e->categoria?->institucion?->only(['id', 'nombre', 'subtipo']),
-                ]);
+        // ─── Institución y área seleccionadas ────────────────────
+        $institucionSelData = $institucionSel?->only(['id', 'nombre', 'subtipo']);
+
+        $areaSel = $areaId
+            ? AreaAcademica::find($areaId)?->only(['id', 'nombre'])
+            : null;
+
+        // ─── Intento activo del alumno (para continuar) ──────────
+        $intentoActivo = null;
+        if ($institucionSel && $areaId && auth()->check()) {
+            $intentoActivo = IntentoExamen::where('usuario_id', auth()->id())
+                ->where('institucion_id', $institucionId)
+                ->where('area_academica_id', $areaId)
+                ->where('estado', 'en_curso')
+                ->first();
         }
-
-        // ─── Institución y carrera seleccionadas ──────────────
-        $institucionSel = $institucionId
-            ? Institucion::find($institucionId)?->only(['id', 'nombre', 'subtipo'])
-            : null;
-
-        $categoriaSel = $categoriaId
-            ? Categoria::with('institucion')->find($categoriaId)
-            : null;
-
-        $totalCategorias = Categoria::whereHas('examenes', fn ($q) => $q->where('activo', true))->count();
-        $totalExamenes = Examen::where('activo', true)->count();
 
         return Inertia::render('Examenes/Universidades/Index', [
             'instituciones' => $instituciones,
-            'categorias' => $categorias,
-            'examenes' => $examenes,
-            'totalCategorias' => $totalCategorias,
-            'totalExamenes' => $totalExamenes,
-            'institucionSel' => $institucionSel,
-            'categoriaSel' => $categoriaSel ? [
-                'id' => $categoriaSel->id,
-                'nombre' => $categoriaSel->nombre,
-                'descripcion_corta' => $categoriaSel->descripcion_corta,
-            ] : null,
-            'filtros' => $request->only(['institucion_id', 'categoria_id']),
+            'areas' => $areas,
+            'tipos' => $tipos,
+            'carreras' => $carreras,
+            'institucionSel' => $institucionSelData,
+            'areaSel' => $areaSel,
+            'intentoActivo' => $intentoActivo,
+            'filtros' => $request->only(['institucion_id', 'area_id']),
         ]);
     }
 }

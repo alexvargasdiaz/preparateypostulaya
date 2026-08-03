@@ -17,6 +17,8 @@ class Pregunta extends Model
 
     protected $fillable = [
         'examen_id',
+        'institucion_id',
+        'carrera',
         'area_academica_id',
         'seccion_id',
         'concepto_id',
@@ -39,6 +41,11 @@ class Pregunta extends Model
     public function areaAcademica(): BelongsTo
     {
         return $this->belongsTo(AreaAcademica::class);
+    }
+
+    public function institucion(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\Catalogo\Models\Institucion::class);
     }
 
     public function seccion(): BelongsTo

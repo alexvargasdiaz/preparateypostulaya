@@ -10,10 +10,13 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalogo\Models\Examen;
+use Modules\Catalogo\Models\Institucion;
+use Modules\Catalogo\Models\Categoria;
 use Modules\Preguntas\Models\AreaAcademica;
 use Modules\Preguntas\Models\Pregunta;
 use Modules\Preguntas\Models\TipoSimulacro;
 use Modules\Rendicion\Models\IntentoExamen;
+use Modules\Examenes\Services\ExamenService;
 
 class AreaAcademicaController extends Controller
 {
@@ -162,6 +165,53 @@ class AreaAcademicaController extends Controller
                 'tipo_simulacro' => $tipo->nombre,
             ],
         ]);
+
+        return redirect()->route('examenes.rendir', ['intento' => $intento->id]);
+    }
+
+    /**
+     * Inicia un simulacro por universidad + área académica.
+     * El alumno registra la carrera a la que postula (categoria_id).
+     */
+    public function iniciarUniversidad(Request $request, int $institucionId, int $areaId, int $tipoId): RedirectResponse
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'categoria_id' => ['required', 'exists:categorias,id'],
+        ]);
+
+        $institucion = Institucion::where('activo', true)->findOrFail($institucionId);
+        $area = AreaAcademica::where('activo', true)->findOrFail($areaId);
+        $tipo = TipoSimulacro::where('area_academica_id', $areaId)
+            ->where('activo', true)
+            ->findOrFail($tipoId);
+
+        // La carrera debe pertenecer a la universidad seleccionada
+        $categoria = Categoria::where('institucion_id', $institucion->id)
+            ->where('activo', true)
+            ->findOrFail($validated['categoria_id']);
+
+        $intentoActivo = IntentoExamen::where('usuario_id', $user->id)
+            ->where('institucion_id', $institucion->id)
+            ->where('area_academica_id', $area->id)
+            ->where('estado', 'en_curso')
+            ->first();
+
+        if ($intentoActivo) {
+            return redirect()->route('examenes.rendir', ['intento' => $intentoActivo->id]);
+        }
+
+        $intento = app(ExamenService::class)->iniciarIntentoUniversidad(
+            institucion: $institucion,
+            area: $area,
+            tipo: $tipo,
+            categoria: $categoria,
+        );
+
+        if (empty($intento->progreso_guardado['preguntas_ids'])) {
+            return back()->with('error', "El área \"{$area->nombre}\" no tiene preguntas disponibles para esta universidad.");
+        }
 
         return redirect()->route('examenes.rendir', ['intento' => $intento->id]);
     }

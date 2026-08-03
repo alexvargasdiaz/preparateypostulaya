@@ -34,6 +34,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Baúl de Preguntas
     Route::get('/baul-preguntas', [AdminBaulPreguntasController::class, 'index'])->name('baul-preguntas.index');
     Route::post('/baul-preguntas/actualizar-area', [AdminBaulPreguntasController::class, 'actualizarArea'])->name('baul-preguntas.actualizar-area');
+    Route::post('/baul-preguntas/actualizar-institucion', [AdminBaulPreguntasController::class, 'actualizarInstitucion'])->name('baul-preguntas.actualizar-institucion');
     Route::post('/baul-preguntas/actualizar-masivo', [AdminBaulPreguntasController::class, 'actualizarMasivo'])->name('baul-preguntas.actualizar-masivo');
 
     // Áreas Académicas

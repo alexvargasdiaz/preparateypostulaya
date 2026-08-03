@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Preguntas\database\seeders;
+namespace Modules\Preguntas\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Modules\Preguntas\Models\AreaAcademica;

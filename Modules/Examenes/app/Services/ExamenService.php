@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Modules\Examenes\Services;
 
 use Modules\Catalogo\Models\Examen;
+use Modules\Catalogo\Models\Categoria;
+use Modules\Catalogo\Models\Institucion;
+use Modules\Preguntas\Models\AreaAcademica;
+use Modules\Preguntas\Models\Concepto;
 use Modules\Preguntas\Models\Pregunta;
+use Modules\Preguntas\Models\TipoSimulacro;
 use Modules\Rendicion\Models\IntentoExamen;
 use Modules\Rendicion\Models\RespuestaUsuario;
 use Modules\Rendicion\Models\ResultadoConcepto;
@@ -65,6 +70,78 @@ class ExamenService
             'puntaje_maximo' => count($preguntasIds),
             'progreso_guardado' => [
                 'preguntas_ids' => $preguntasIds,
+            ],
+        ]);
+    }
+
+    /**
+     * Selecciona preguntas para un simulacro por universidad + área académica.
+     *
+     * Prioriza el banco propio de la universidad (institucion_id = X) para el
+     * área seleccionada y completa con el banco global del área si las propias
+     * no alcanzan el número solicitado. Si la universidad no tiene preguntas
+     * propias, usa solo el banco global.
+     */
+    public function seleccionarPreguntasUniversidad(
+        int $areaId,
+        int $institucionId,
+        int $numPreguntas
+    ): array {
+        $propias = Pregunta::where('area_academica_id', $areaId)
+            ->where('institucion_id', $institucionId)
+            ->where('activa', true)
+            ->inRandomOrder()
+            ->limit($numPreguntas)
+            ->pluck('id')
+            ->toArray();
+
+        if (count($propias) < $numPreguntas) {
+            $faltantes = $numPreguntas - count($propias);
+            $globales = Pregunta::where('area_academica_id', $areaId)
+                ->whereNull('institucion_id')
+                ->where('activa', true)
+                ->whereNotIn('id', $propias)
+                ->inRandomOrder()
+                ->limit($faltantes)
+                ->pluck('id')
+                ->toArray();
+
+            $propias = array_merge($propias, $globales);
+        }
+
+        return $propias;
+    }
+
+    /**
+     * Crea un intento de simulacro vinculado a universidad + área académica
+     * y a la carrera (categoría) a la que postula el alumno.
+     */
+    public function iniciarIntentoUniversidad(
+        Institucion $institucion,
+        AreaAcademica $area,
+        TipoSimulacro $tipo,
+        Categoria $categoria
+    ): IntentoExamen {
+        $preguntasIds = $this->seleccionarPreguntasUniversidad(
+            areaId: $area->id,
+            institucionId: $institucion->id,
+            numPreguntas: $tipo->num_preguntas,
+        );
+
+        return IntentoExamen::create([
+            'usuario_id' => auth()->id(),
+            'institucion_id' => $institucion->id,
+            'categoria_id' => $categoria->id,
+            'area_academica_id' => $area->id,
+            'tipo_simulacro_id' => $tipo->id,
+            'carrera' => $categoria->nombre,
+            'estado' => 'en_curso',
+            'fecha_inicio' => now(),
+            'puntaje_maximo' => count($preguntasIds),
+            'puntaje_total' => 0,
+            'progreso_guardado' => [
+                'preguntas_ids' => $preguntasIds,
+                'tipo_simulacro' => $tipo->nombre,
             ],
         ]);
     }

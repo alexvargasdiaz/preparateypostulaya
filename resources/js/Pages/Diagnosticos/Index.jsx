@@ -55,6 +55,16 @@ export default function Index({ intentos, areas, totalPreguntas, duracionMinutos
                         </motion.div>
                     )}
 
+                    {flash?.error && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                            className="mb-6 flex items-center gap-3 rounded-xl cyber-card border-neon-magenta/30 px-5 py-4 shadow-neon-magenta/10">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neon-magenta/10 border border-neon-magenta/30">
+                                <AlertTriangle className="h-4 w-4 text-neon-magenta" />
+                            </div>
+                            <p className="text-sm font-bold text-neon-magenta">{flash.error}</p>
+                        </motion.div>
+                    )}
+
                     {/* Info card */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
                         className="cyber-card rounded-xl border-cyber-dark-400/40 p-5">

@@ -27,6 +27,9 @@ Route::middleware(['auth', 'estudiante'])->group(function () {
         Route::get('/areas-academicas/{areaId}/tipos', [AreaAcademicaController::class, 'tipos'])->name('area-tipos');
         Route::post('/areas-academicas/{areaId}/tipos/{tipoId}/iniciar', [AreaAcademicaController::class, 'iniciar'])->name('area-tipo-iniciar');
         Route::post('/areas-academicas/{areaId}/examenes/{examenId}/iniciar', [AreaAcademicaController::class, 'iniciarExamen'])->name('area-examen-iniciar');
+
+        // ─── Simulacro por universidad + área académica ────────────
+        Route::post('/universidades/{institucionId}/areas/{areaId}/tipos/{tipoId}/iniciar', [AreaAcademicaController::class, 'iniciarUniversidad'])->name('universidad-tipo-iniciar');
     });
 
     // ─── Examen diagnóstico general ─────────────────────────

@@ -61,7 +61,7 @@ class RendicionController extends Controller
      */
     public function rendir($intentoId)
     {
-        $intento = IntentoExamen::with(['examen', 'areaAcademica'])
+        $intento = IntentoExamen::with(['examen', 'areaAcademica', 'tipoSimulacro'])
             ->findOrFail($intentoId);
 
         if ($intento->usuario_id !== auth()->id()) {
@@ -106,11 +106,16 @@ class RendicionController extends Controller
 
         $institucion = $intento->institucion ?? $intento->areaAcademica;
 
+        $tiempoLimite = $intento->tipoSimulacro?->duracion_min
+            ?? $intento->examen?->tiempo_limite_min
+            ?? $intento->areaAcademica?->duracion_min
+            ?? 20;
+
         return Inertia::render('Rendicion/Index', [
             'intento' => $intento,
             'institucion' => $institucion?->only(['id', 'nombre', 'subtipo']),
             'preguntas' => $preguntasParaFrontend,
-            'tiempoRestante' => ($intento->examen?->tiempo_limite_min ?? $intento->areaAcademica?->duracion_min ?? 20) * 60,
+            'tiempoRestante' => $tiempoLimite * 60,
         ]);
     }
 

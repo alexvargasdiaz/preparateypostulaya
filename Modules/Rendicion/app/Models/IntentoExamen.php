@@ -17,6 +17,7 @@ class IntentoExamen extends Model
     protected $fillable = [
         'usuario_id',
         'institucion_id',
+        'categoria_id',
         'carrera',
         'area_academica_id',
         'tipo_simulacro_id',
@@ -57,6 +58,11 @@ class IntentoExamen extends Model
     public function institucion(): BelongsTo
     {
         return $this->belongsTo(\Modules\Catalogo\Models\Institucion::class);
+    }
+
+    public function categoria(): BelongsTo
+    {
+        return $this->belongsTo(\Modules\Catalogo\Models\Categoria::class);
     }
 
     public function examen(): BelongsTo

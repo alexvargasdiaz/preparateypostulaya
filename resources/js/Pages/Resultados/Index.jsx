@@ -31,7 +31,7 @@ function CircularProgress({ value, size = 120, strokeWidth = 8 }) {
     );
 }
 
-export default function ResultadoExamen({ intento, institucion, respuestas, resultadosConceptos, mensajesAyuda, userEmail, userWhatsapp, carrerasCompatibles = [], carrerasNoCompatibles = [] }) {
+export default function ResultadoExamen({ intento, institucion, respuestas, resultadosConceptos, mensajesAyuda, userEmail, userWhatsapp, carrerasCompatibles = [], carrerasNoCompatibles = [], carreraAplicada = null }) {
     const puntaje = intento?.puntaje_total ?? 0;
     const maximo = intento?.puntaje_maximo ?? 1;
     const porcentaje = Math.round((puntaje / maximo) * 100);
@@ -195,7 +195,7 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                     </motion.div>
 
                     {/* Carreras compatibles según puntaje */}
-                    {esAreaAcademica && carrerasCompatibles.length > 0 && (
+                    {esAreaAcademica && (carrerasCompatibles.length > 0 || carreraAplicada) && (
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                             className="rounded-xl cyber-card p-5 mt-4 border-neon-green/30 bg-neon-green/[0.03]">
                             <div className="flex items-center gap-2 mb-1">
@@ -205,17 +205,33 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                                 </h2>
                             </div>
                             <p className="text-xs font-semibold text-text-muted mb-4">
-                                Según tu puntaje de {porcentaje}%, podrías estar apto para estas carreras:
+                                {carreraAplicada
+                                    ? `Según tu puntaje de ${porcentaje}%, estas son las carreras de tu universidad para las que alcanzas:`
+                                    : `Según tu puntaje de ${porcentaje}%, podrías estar apto para estas carreras:`}
                             </p>
                             <div className="space-y-2">
                                 {carrerasCompatibles.map((c) => (
-                                    <div key={c.categoria_id} className="flex items-center justify-between rounded-xl bg-cyber-dark-200 border border-neon-green/20 p-4">
+                                    <div key={c.categoria_id}
+                                        className={`flex items-center justify-between rounded-xl p-4 ${
+                                            c.es_carrera_aplicada
+                                                ? 'bg-neon-green/10 border-2 border-neon-green/50 shadow-[0_0_15px_rgba(0,255,136,0.15)]'
+                                                : 'bg-cyber-dark-200 border border-neon-green/20'
+                                        }`}>
                                         <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-green/10 border border-neon-green/30">
+                                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                                                c.es_carrera_aplicada ? 'bg-neon-green/20 border border-neon-green/40' : 'bg-neon-green/10 border border-neon-green/30'
+                                            }`}>
                                                 <GraduationCap className="h-5 w-5 text-neon-green" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-heading font-bold text-text-primary">{c.nombre}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-sm font-heading font-bold text-text-primary">{c.nombre}</p>
+                                                    {c.es_carrera_aplicada && (
+                                                        <span className="rounded-md bg-neon-green/20 border border-neon-green/40 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-neon-green">
+                                                            Tu carrera
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs font-semibold text-text-muted flex items-center gap-1">
                                                     <Building2 className="h-3 w-3" /> {c.institucion}
                                                 </p>
@@ -228,6 +244,26 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {esAreaAcademica && carreraAplicada && carrerasNoCompatibles.some((c) => c.es_carrera_aplicada) && (
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                            className="rounded-xl cyber-card p-5 mt-4 border-neon-magenta/50 bg-neon-magenta/[0.06]">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-neon-magenta/15 border border-neon-magenta/40">
+                                    <AlertTriangle className="h-6 w-6 text-neon-magenta" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-heading font-bold text-text-primary">
+                                        Tu carrera aún no está asegurada
+                                    </h2>
+                                    <p className="text-xs font-semibold text-text-muted">
+                                        Sigue practicando: con un poco más de puntaje podrías alcanzar{' '}
+                                        <span className="font-bold text-text-primary">{carreraAplicada.nombre}</span>.
+                                    </p>
+                                </div>
                             </div>
                         </motion.div>
                     )}
@@ -245,14 +281,25 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                                 {carrerasNoCompatibles.map((c) => {
                                     const faltante = c.puntaje_minimo > 0 ? Math.max(0, c.puntaje_minimo - c.puntaje_obtenido) : 0;
                                     return (
-                                        <div key={c.categoria_id} className="rounded-xl border border-cyber-dark-400/30 bg-cyber-dark-200 p-4">
+                                        <div key={c.categoria_id} className={`rounded-xl border p-4 ${
+                                            c.es_carrera_aplicada
+                                                ? 'border-neon-magenta/60 bg-neon-magenta/[0.08] shadow-[0_0_15px_rgba(255,0,255,0.1)]'
+                                                : 'border-cyber-dark-400/30 bg-cyber-dark-200'
+                                        }`}>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neon-magenta/10 border border-neon-magenta/20">
                                                         <GraduationCap className="h-5 w-5 text-neon-magenta" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-heading font-bold text-text-primary">{c.nombre}</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="text-sm font-heading font-bold text-text-primary">{c.nombre}</p>
+                                                            {c.es_carrera_aplicada && (
+                                                                <span className="rounded-md bg-neon-magenta/20 border border-neon-magenta/40 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-neon-magenta">
+                                                                    Tu carrera
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <p className="text-xs font-semibold text-text-muted flex items-center gap-1">
                                                             <Building2 className="h-3 w-3" /> {c.institucion}
                                                         </p>

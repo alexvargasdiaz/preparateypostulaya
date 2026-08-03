@@ -3,41 +3,46 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import {
     Package, Search, Filter, Layers, BookOpen, CheckCircle2,
-    Edit3, Save, X, Sparkles, Upload, Plus
+    Edit3, Save, X, Sparkles, Upload, Plus, Building2
 } from 'lucide-react';
 
-export default function BaulPreguntas({ preguntas, areas, conceptos, filtros }) {
+export default function BaulPreguntas({ preguntas, areas, conceptos, instituciones, filtros }) {
     const { flash } = usePage().props;
     const [busqueda, setBusqueda] = useState(filtros.busqueda || '');
+    const [institucionFilter, setInstitucionFilter] = useState(filtros.institucion_id || '');
     const [areaFilter, setAreaFilter] = useState(filtros.area_academica_id || '');
     const [dificultadFilter, setDificultadFilter] = useState(filtros.dificultad || '');
     const [editingPregunta, setEditingPregunta] = useState(null);
     const [editArea, setEditArea] = useState('');
+    const [editInstitucion, setEditInstitucion] = useState('');
     const [selectedIds, setSelectedIds] = useState([]);
     const [bulkArea, setBulkArea] = useState('');
+    const [bulkInstitucion, setBulkInstitucion] = useState('');
 
     const applyFilters = () => {
         router.get('/admin/baul-preguntas', {
-            busqueda: busqueda || undefined, area_academica_id: areaFilter || undefined,
+            busqueda: busqueda || undefined, institucion_id: institucionFilter || undefined,
+            area_academica_id: areaFilter || undefined,
             dificultad: dificultadFilter || undefined,
         }, { preserveState: true, replace: true });
     };
 
     const clearFilters = () => {
-        setBusqueda(''); setAreaFilter(''); setDificultadFilter('');
+        setBusqueda(''); setInstitucionFilter(''); setAreaFilter(''); setDificultadFilter('');
         router.get('/admin/baul-preguntas', {}, { preserveState: true, replace: true });
     };
 
     const handleQuickEdit = (pregunta) => {
         setEditingPregunta(pregunta.id);
         setEditArea(pregunta.area_academica_id || '');
+        setEditInstitucion(pregunta.institucion_id || '');
     };
 
     const saveQuickEdit = (id) => {
-        fetch('/admin/baul-preguntas/actualizar-area', {
+        fetch('/admin/baul-preguntas/actualizar-masivo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content, 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify({ pregunta_id: id, area_academica_id: editArea || null }),
+            body: JSON.stringify({ preguntas_ids: [id], area_academica_id: editArea || null, institucion_id: editInstitucion || null }),
         }).then(() => { setEditingPregunta(null); router.reload({ preserveState: true }); });
     };
 
@@ -51,11 +56,16 @@ export default function BaulPreguntas({ preguntas, areas, conceptos, filtros }) 
     };
 
     const applyBulk = () => {
-        if (selectedIds.length === 0 || !bulkArea) return;
+        if (selectedIds.length === 0 || (!bulkArea && !bulkInstitucion)) return;
+        const body = { preguntas_ids: selectedIds };
+        // "0" significa quitar universidad (banco global); "" significa sin cambios
+        if (bulkArea) body.area_academica_id = bulkArea;
+        if (bulkInstitucion === '0') body.institucion_id = null;
+        else if (bulkInstitucion) body.institucion_id = bulkInstitucion;
         fetch('/admin/baul-preguntas/actualizar-masivo', {
             method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content, 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify({ preguntas_ids: selectedIds, area_academica_id: bulkArea || null }),
-        }).then(() => { setSelectedIds([]); setBulkArea(''); router.reload({ preserveState: true }); });
+            body: JSON.stringify(body),
+        }).then(() => { setSelectedIds([]); setBulkArea(''); setBulkInstitucion(''); router.reload({ preserveState: true }); });
     };
 
     const dificultadLabels = { facil: 'Fácil', media: 'Media', dificil: 'Difícil' };
@@ -136,6 +146,14 @@ export default function BaulPreguntas({ preguntas, areas, conceptos, filtros }) 
                                 </div>
                             </div>
                             <div>
+                                <label className="block text-xs font-bold text-text-muted mb-1">Universidad</label>
+                                <select value={institucionFilter} onChange={(e) => setInstitucionFilter(e.target.value)}
+                                    className="cyber-input rounded-xl px-3 py-2 text-sm">
+                                    <option value="">Todas</option>
+                                    {instituciones.map((i) => <option key={i.id} value={i.id}>{i.nombre}</option>)}
+                                </select>
+                            </div>
+                            <div>
                                 <label className="block text-xs font-bold text-text-muted mb-1">Área</label>
                                 <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)}
                                     className="cyber-input rounded-xl px-3 py-2 text-sm">
@@ -168,8 +186,13 @@ export default function BaulPreguntas({ preguntas, areas, conceptos, filtros }) 
                             className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-neon-cyan/30 bg-neon-cyan/5 p-4">
                             <span className="text-sm font-bold text-neon-cyan">{selectedIds.length} seleccionadas</span>
                             <select value={bulkArea} onChange={(e) => setBulkArea(e.target.value)} className="cyber-input rounded-xl px-3 py-1.5 text-sm">
-                                <option value="">Sin cambios</option>
+                                <option value="">Área: sin cambios</option>
                                 {areas.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+                            </select>
+                            <select value={bulkInstitucion} onChange={(e) => setBulkInstitucion(e.target.value)} className="cyber-input rounded-xl px-3 py-1.5 text-sm">
+                                <option value="">Universidad: sin cambios</option>
+                                <option value="0">Sin universidad (banco global)</option>
+                                {instituciones.map((i) => <option key={i.id} value={i.id}>{i.nombre}</option>)}
                             </select>
                             <button onClick={applyBulk} className="cyber-btn cyber-btn-primary rounded-xl px-4 py-1.5 text-sm font-bold">
                                 <Save className="h-4 w-4" /> Aplicar
@@ -214,6 +237,11 @@ export default function BaulPreguntas({ preguntas, areas, conceptos, filtros }) 
                                                         <Layers className="h-3 w-3 mr-1" /> {p.area_academica?.nombre?.substring(0, 30) || 'Sin área'}
                                                     </span>
                                                     <span className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-bold border ${
+                                                        p.institucion_id ? 'bg-neon-magenta/10 text-neon-magenta border-neon-magenta/30' : 'bg-cyber-dark-300 text-text-muted border-cyber-dark-400/30'
+                                                    }`}>
+                                                        <Building2 className="h-3 w-3 mr-1" /> {p.institucion?.nombre?.substring(0, 30) || 'Banco global'}
+                                                    </span>
+                                                    <span className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-bold border ${
                                                         dificultadColors[p.dificultad] || 'bg-cyber-dark-300 text-text-muted border-cyber-dark-400/30'
                                                     }`}>
                                                         {dificultadLabels[p.dificultad] || p.dificultad}
@@ -233,6 +261,10 @@ export default function BaulPreguntas({ preguntas, areas, conceptos, filtros }) 
                                                             <option value="">Sin área</option>
                                                             {areas.map((a) => <option key={a.id} value={a.id}>{a.nombre.substring(0, 30)}</option>)}
                                                         </select>
+                                                        <select value={editInstitucion} onChange={(e) => setEditInstitucion(e.target.value)} className="cyber-input rounded-lg px-2 py-1 text-xs">
+                                                            <option value="">Banco global</option>
+                                                            {instituciones.map((i) => <option key={i.id} value={i.id}>{i.nombre.substring(0, 30)}</option>)}
+                                                        </select>
                                                         <button onClick={() => saveQuickEdit(p.id)} className="rounded-lg bg-neon-cyan p-1 text-white hover:bg-neon-cyan/80"><Save className="h-3.5 w-3.5" /></button>
                                                         <button onClick={() => setEditingPregunta(null)} className="rounded-lg border border-cyber-dark-400 p-1 text-text-muted hover:bg-cyber-dark-300"><X className="h-3.5 w-3.5" /></button>
                                                     </div>
@@ -244,7 +276,7 @@ export default function BaulPreguntas({ preguntas, areas, conceptos, filtros }) 
                                                         </button>
                                                         <button onClick={() => handleQuickEdit(p)}
                                                             className="inline-flex items-center gap-1 rounded-lg border border-cyber-dark-400/50 bg-cyber-dark-300 px-2 py-1 text-xs font-bold text-text-muted hover:text-white transition-all">
-                                                            <Layers className="h-3 w-3" /> Área
+                                                            <Layers className="h-3 w-3" /> Área / Univ.
                                                         </button>
                                                     </div>
                                                 )}

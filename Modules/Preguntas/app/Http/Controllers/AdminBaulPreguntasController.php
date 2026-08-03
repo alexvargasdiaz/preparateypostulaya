@@ -7,6 +7,7 @@ namespace Modules\Preguntas\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
+use Modules\Catalogo\Models\Institucion;
 use Modules\Preguntas\Models\AreaAcademica;
 use Modules\Preguntas\Models\Concepto;
 use Modules\Preguntas\Models\Pregunta;
@@ -18,8 +19,12 @@ class AdminBaulPreguntasController extends Controller
         $query = Pregunta::with([
             'areaAcademica',
             'concepto',
+            'institucion',
         ]);
 
+        if ($request->filled('institucion_id')) {
+            $query->where('institucion_id', $request->institucion_id);
+        }
         if ($request->filled('area_academica_id')) {
             $query->where('area_academica_id', $request->area_academica_id);
         }
@@ -46,11 +51,16 @@ class AdminBaulPreguntasController extends Controller
         $conceptos = Concepto::orderBy('nombre')
             ->get(['id', 'nombre']);
 
+        $instituciones = Institucion::where('activo', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
         return Inertia::render('Admin/BaulPreguntas/Index', [
             'preguntas' => $preguntas,
             'areas' => $areas,
             'conceptos' => $conceptos,
-            'filtros' => $request->only(['area_academica_id', 'dificultad', 'activa', 'busqueda']),
+            'instituciones' => $instituciones,
+            'filtros' => $request->only(['institucion_id', 'area_academica_id', 'dificultad', 'activa', 'busqueda']),
         ]);
     }
 
@@ -69,17 +79,36 @@ class AdminBaulPreguntasController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function actualizarInstitucion(Request $request)
+    {
+        $validated = $request->validate([
+            'pregunta_id' => 'required|integer|exists:preguntas,id',
+            'institucion_id' => 'nullable|integer|exists:instituciones,id',
+        ]);
+
+        $pregunta = Pregunta::findOrFail($validated['pregunta_id']);
+        $pregunta->update([
+            'institucion_id' => $validated['institucion_id'] ?? null,
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function actualizarMasivo(Request $request)
     {
         $validated = $request->validate([
             'preguntas_ids' => 'required|array',
             'preguntas_ids.*' => 'integer|exists:preguntas,id',
             'area_academica_id' => 'nullable|integer|exists:areas_academicas,id',
+            'institucion_id' => 'nullable|integer|exists:instituciones,id',
         ]);
 
         $data = [];
-        if (isset($validated['area_academica_id'])) {
+        if (array_key_exists('area_academica_id', $validated)) {
             $data['area_academica_id'] = $validated['area_academica_id'];
+        }
+        if (array_key_exists('institucion_id', $validated)) {
+            $data['institucion_id'] = $validated['institucion_id'];
         }
 
         Pregunta::whereIn('id', $validated['preguntas_ids'])->update($data);

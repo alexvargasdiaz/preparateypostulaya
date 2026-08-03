@@ -60,12 +60,18 @@ class ResultadosController extends Controller
                 ? round(($intento->puntaje_total / $intento->puntaje_maximo) * 100, 2)
                 : 0;
 
-            $categorias = \Modules\Catalogo\Models\Categoria::with(['institucion', 'requisitos.concepto'])
+            $categoriasQuery = \Modules\Catalogo\Models\Categoria::with(['institucion', 'requisitos.concepto'])
                 ->where(function ($q) {
                     $q->whereHas('requisitos')
                       ->orWhere('puntaje_minimo_total', '>', 0);
-                })
-                ->get();
+                });
+
+            // Solo comparar contra carreras de la misma universidad
+            if ($intento->institucion_id) {
+                $categoriasQuery->where('institucion_id', $intento->institucion_id);
+            }
+
+            $categorias = $categoriasQuery->get();
 
             foreach ($categorias as $categoria) {
                 $requisitos = $categoria->requisitos;
@@ -94,6 +100,7 @@ class ResultadosController extends Controller
                     'categoria_id' => $categoria->id,
                     'nombre' => $categoria->nombre,
                     'institucion' => $categoria->institucion?->nombre ?? '—',
+                    'es_carrera_aplicada' => $intento->categoria_id === $categoria->id,
                     'puntaje_obtenido' => $puntajeTotalEstudiante,
                     'puntaje_minimo' => $minimoTotal,
                     'cumple_puntaje' => $cumplePorPuntaje,
@@ -123,6 +130,12 @@ class ResultadosController extends Controller
             'userWhatsapp' => auth()->user()?->whatsapp_numero,
             'carrerasCompatibles' => $carrerasCompatibles,
             'carrerasNoCompatibles' => $carrerasNoCompatibles,
+            'carreraAplicada' => $intento->categoria_id
+                ? [
+                    'id' => $intento->categoria_id,
+                    'nombre' => $intento->carrera,
+                ]
+                : null,
         ]);
     }
 
