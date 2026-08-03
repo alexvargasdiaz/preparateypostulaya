@@ -20,6 +20,7 @@ Route::middleware(['auth', 'estudiante'])->group(function () {
         Route::get('/iniciar', [RendicionController::class, 'iniciar'])->name('iniciar');
         Route::get('/intento/{intento}', [RendicionController::class, 'rendir'])->name('rendir');
         Route::post('/intento/{intento}/guardar', [RendicionController::class, 'guardarRespuesta'])->name('guardar');
+        Route::post('/intento/{intento}/guardar-masivo', [RendicionController::class, 'guardarMasivo'])->name('guardar-masivo');
         Route::post('/intento/{intento}/finalizar', [RendicionController::class, 'finalizar'])->name('finalizar');
 
         // ─── Áreas académicas ──────────────────────────────────
@@ -38,6 +39,7 @@ Route::middleware(['auth', 'estudiante'])->group(function () {
         Route::post('/iniciar', [DiagnosticoController::class, 'iniciar'])->name('iniciar');
         Route::get('/rendir/{intento}', [DiagnosticoController::class, 'rendir'])->name('rendir');
         Route::post('/rendir/{intento}/guardar', [DiagnosticoController::class, 'guardarRespuesta'])->name('guardar');
+        Route::post('/rendir/{intento}/guardar-masivo', [DiagnosticoController::class, 'guardarMasivo'])->name('guardar-masivo');
         Route::post('/rendir/{intento}/finalizar', [DiagnosticoController::class, 'finalizar'])->name('finalizar');
         Route::get('/rendir/{intento}/resultados', [DiagnosticoController::class, 'resultados'])->name('resultados');
     });

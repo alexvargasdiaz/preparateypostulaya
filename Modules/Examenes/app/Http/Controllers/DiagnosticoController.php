@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalogo\Models\Categoria;
 use Modules\Catalogo\Models\RequisitosCarrera;
+use Modules\Examenes\Services\ExamenService;
 use Modules\Preguntas\Models\AreaAcademica;
 use Modules\Preguntas\Models\Concepto;
 use Modules\Preguntas\Models\Alternativa;
@@ -245,6 +246,33 @@ class DiagnosticoController extends Controller
         );
 
         return response()->json(['saved' => true]);
+    }
+
+    /**
+     * Guarda varias respuestas del diagnóstico en una sola operación.
+     */
+    public function guardarMasivo(Request $request, $intentoId): JsonResponse
+    {
+        $validated = $request->validate([
+            'respuestas' => ['required', 'array', 'max:200'],
+            'respuestas.*.pregunta_id' => ['required', 'integer', 'exists:preguntas,id'],
+            'respuestas.*.alternativa_id_elegida' => ['nullable', 'integer', 'exists:alternativas,id'],
+        ]);
+
+        $intento = IntentoExamen::findOrFail($intentoId);
+
+        if ($intento->usuario_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (in_array($intento->estado, ['completado', 'abandonado'], true)) {
+            return response()->json(['error' => 'Este intento ya fue finalizado'], 409);
+        }
+
+        $guardadas = app(ExamenService::class)
+            ->guardarRespuestasMasivas($intento, $validated['respuestas']);
+
+        return response()->json(['saved' => $guardadas]);
     }
 
     /**

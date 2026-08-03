@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { router } from '@inertiajs/react';
 import ConfirmModal from '@/Components/ConfirmModal';
 import { Star, List, Square, ChevronLeft, ChevronRight, Check, Menu, Brain } from 'lucide-react';
+import { guardarRespuestasEnLotes, guardarRespuestasBatch } from '#lib/guardarRespuestas';
 
 // ─── Timer Component ───────────────────────────────────────────
 function Timer({ seconds, onTimeUp }) {
@@ -268,8 +269,9 @@ function NavButton({ children, onClick, disabled, variant = 'default' }) {
 }
 
 // ─── Loading Screen ────────────────────────────────────────────
-function LoadingScreen() {
+function LoadingScreen({ fase, listo, total }) {
     const [dots, setDots] = useState('');
+    const pct = total > 0 ? Math.round((listo / total) * 100) : 100;
     useEffect(() => {
         const interval = setInterval(() => {
             setDots((prev) => (prev.length >= 3 ? '' : prev + '.'));
@@ -279,7 +281,7 @@ function LoadingScreen() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-cyber-dark cyber-grid">
-            <div className="text-center">
+            <div className="w-full max-w-sm px-6 text-center">
                 <div className="relative mx-auto mb-8 flex h-24 w-24 items-center justify-center">
                     <div className="absolute inset-0 animate-ping rounded-full bg-neon-cyan/20" />
                     <div className="absolute inset-2 animate-pulse rounded-full bg-neon-magenta/30" />
@@ -288,18 +290,25 @@ function LoadingScreen() {
                     </div>
                 </div>
                 <p className="text-2xl font-heading font-black text-text-primary neon-text-cyan">
-                    Calculando resultados<span className="tabular-nums">{dots}</span>
+                    {fase === 'guardando' ? 'Guardando respuestas' : 'Calculando resultados'}
+                    <span className="tabular-nums">{dots}</span>
                 </p>
-                <p className="mt-2 text-sm text-text-muted">Estamos procesando tus respuestas</p>
-                <div className="mx-auto mt-8 h-1.5 w-48 overflow-hidden rounded-full bg-cyber-dark-300 border border-cyber-dark-400/30">
-                    <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-neon-cyan to-neon-magenta"
+                <p className="mt-2 text-sm text-text-muted">
+                    {fase === 'guardando' && total > 0
+                        ? `${listo} de ${total} respuestas`
+                        : 'Estamos procesando tus respuestas'}
+                </p>
+                <div className="mx-auto mt-8 h-2 w-full max-w-sm overflow-hidden rounded-full bg-cyber-dark-300 border border-cyber-dark-400/30">
+                    <div className="h-full rounded-full bg-gradient-to-r from-neon-cyan to-neon-magenta transition-all duration-300"
                         style={{
-                            animation: 'loadingBar 1.5s ease-in-out infinite',
-                            boxShadow: '0 0 8px rgba(0,240,255,0.4)',
+                            width: `${fase === 'calculando' ? 100 : pct}%`,
+                            boxShadow: '0 0 10px rgba(0,240,255,0.4)',
                         }} />
                 </div>
+                <p className="mt-3 font-heading text-sm font-black tabular-nums text-neon-cyan">
+                    {fase === 'calculando' ? '100%' : `${pct}%`}
+                </p>
             </div>
-            <style>{`@keyframes loadingBar{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}`}</style>
         </div>
     );
 }
@@ -311,9 +320,8 @@ export default function RendirExamen({ intento, institucion, preguntas, tiempoRe
         preguntas.map((p) => p.respuesta_guardada || null)
     );
     const [markedForReview, setMarkedForReview] = useState(new Set());
-    const [saving, setSaving] = useState(false);
     const [showNav, setShowNav] = useState(false);
-    const [isFinished, setIsFinished] = useState(false);
+    const [finish, setFinish] = useState(null);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const autoSaveTimer = useRef(null);
     const respuestasRef = useRef(respuestas);
@@ -322,52 +330,39 @@ export default function RendirExamen({ intento, institucion, preguntas, tiempoRe
     const totalPreguntas = preguntas.length;
     const answeredCount = respuestas.filter(Boolean).length;
 
+    const urlGuardarMasivo = `/examenes/intento/${intento.id}/guardar-masivo`;
+    const urlResultados = `/resultados/${intento.id}`;
+
+    const responderPreguntas = useCallback((snapshot) => preguntas
+        .map((p, i) => ({ pregunta_id: p.id, alternativa_id_elegida: snapshot[i] ?? null }))
+        .filter((r) => r.alternativa_id_elegida != null), [preguntas]);
+
     useEffect(() => {
         respuestasRef.current = respuestas;
     }, [respuestas]);
 
     useEffect(() => {
-        autoSaveTimer.current = setInterval(() => {
-            const snapshot = respuestasRef.current;
-            Promise.all(
-                preguntas.map((p, i) =>
-                    snapshot[i] ? guardarRespuesta(p.id, snapshot[i]) : Promise.resolve()
-                )
-            );
+        let enProceso = false;
+        autoSaveTimer.current = setInterval(async () => {
+            if (enProceso) return;
+            const respondidas = responderPreguntas(respuestasRef.current);
+            if (respondidas.length === 0) return;
+            enProceso = true;
+            try {
+                await guardarRespuestasBatch(urlGuardarMasivo, respondidas);
+            } catch (e) { console.error('Error en auto-guardado:', e); }
+            enProceso = false;
         }, 30000);
         return () => clearInterval(autoSaveTimer.current);
-    }, []);
+    }, [urlGuardarMasivo, responderPreguntas]);
 
     const guardarRespuesta = useCallback(async (preguntaId, alternativaId) => {
         try {
-            await fetch(`/examenes/intento/${intento.id}/guardar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content,
-                },
-                body: JSON.stringify({
-                    pregunta_id: preguntaId,
-                    alternativa_id_elegida: alternativaId,
-                }),
-            });
+            await guardarRespuestasBatch(urlGuardarMasivo, [{ pregunta_id: preguntaId, alternativa_id_elegida: alternativaId }]);
         } catch (e) {
             console.error('Error al guardar respuesta:', e);
         }
-    }, [intento.id]);
-
-    const guardarTodasRespuestas = useCallback(async () => {
-        setSaving(true);
-        try {
-            await Promise.all(
-                preguntas.map((p, i) =>
-                    respuestas[i] ? guardarRespuesta(p.id, respuestas[i]) : Promise.resolve()
-                )
-            );
-        } finally {
-            setSaving(false);
-        }
-    }, [preguntas, respuestas, guardarRespuesta]);
+    }, [urlGuardarMasivo]);
 
     const handleSelect = (preguntaId, alternativaId) => {
         const newRespuestas = [...respuestas];
@@ -414,29 +409,36 @@ export default function RendirExamen({ intento, institucion, preguntas, tiempoRe
 
     const handleFinish = async () => {
         setShowConfirmModal(false);
-        setIsFinished(true);
+
+        const respondidas = responderPreguntas(respuestasRef.current);
+        setFinish({ fase: 'guardando', listo: 0, total: respondidas.length });
+
         try {
-            await guardarTodasRespuestas();
+            await guardarRespuestasEnLotes({
+                url: urlGuardarMasivo,
+                respuestas: respondidas,
+                onProgreso: (listo, total) => setFinish({ fase: 'guardando', listo, total }),
+            });
         } catch (e) {
             console.error('Error al guardar respuestas:', e);
         }
+
+        setFinish({ fase: 'calculando', listo: respondidas.length, total: respondidas.length });
+
         router.post(`/examenes/intento/${intento.id}/finalizar`, {}, {
             onError: () => {
-                window.location.href = `/resultados/${intento.id}`;
-            },
-            onSuccess: () => {
-                // La redirección la maneja Inertia desde el servidor
+                window.location.href = urlResultados;
             },
         });
         // Fallback: si Inertia no redirige en 60s, forzamos navegación
         setTimeout(() => {
-            window.location.href = `/resultados/${intento.id}`;
+            window.location.href = urlResultados;
         }, 60000);
     };
 
     const handleTimeUp = () => handleFinish();
 
-    if (isFinished) return <LoadingScreen />;
+    if (finish) return <LoadingScreen fase={finish.fase} listo={finish.listo} total={finish.total} />;
 
     return (
         <>
@@ -463,12 +465,6 @@ export default function RendirExamen({ intento, institucion, preguntas, tiempoRe
 
                     <div className="flex items-center gap-2 sm:gap-3">
                         <Timer seconds={tiempoRestante} onTimeUp={handleTimeUp} />
-                        {saving && (
-                            <span className="hidden rounded-xl bg-neon-cyan/10 border border-neon-cyan/30 px-3 py-1.5 text-[10px] font-bold text-neon-cyan animate-pulse sm:inline-flex items-center gap-1.5">
-                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-neon-cyan shadow-[0_0_6px_rgba(0,240,255,0.5)]" />
-                                Guardando
-                            </span>
-                        )}
                     </div>
                 </div>
             </header>

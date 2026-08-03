@@ -7,6 +7,7 @@ namespace Modules\Examenes\Services;
 use Modules\Catalogo\Models\Examen;
 use Modules\Catalogo\Models\Categoria;
 use Modules\Catalogo\Models\Institucion;
+use Modules\Preguntas\Models\Alternativa;
 use Modules\Preguntas\Models\AreaAcademica;
 use Modules\Preguntas\Models\Concepto;
 use Modules\Preguntas\Models\Pregunta;
@@ -144,6 +145,49 @@ class ExamenService
                 'tipo_simulacro' => $tipo->nombre,
             ],
         ]);
+    }
+
+    /**
+     * Guarda varias respuestas de un intento en una sola operación.
+     *
+     * Reemplaza el patrón anterior de "una petición HTTP por respuesta", que
+     * al finalizar un examen con muchas preguntas (p. ej. el diagnóstico con
+     * 200+ preguntas) disparaba cientos de requests en paralelo y bloqueaba la
+     * pantalla de resultados. Con este método, el front envía lotes de
+     * respuestas en una única llamada (upsert sobre la PK natural
+     * intento_id + pregunta_id).
+     *
+     * @param  array<int, array{pregunta_id: int, alternativa_id_elegida: int|null}>  $respuestas
+     */
+    public function guardarRespuestasMasivas(IntentoExamen $intento, array $respuestas): int
+    {
+        $alternativaIds = collect($respuestas)
+            ->pluck('alternativa_id_elegida')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $correctas = Alternativa::whereIn('id', $alternativaIds)->pluck('es_correcta', 'id');
+
+        $ahora = now();
+        $filas = array_map(fn ($r) => [
+            'intento_id' => $intento->id,
+            'pregunta_id' => $r['pregunta_id'],
+            'alternativa_id_elegida' => $r['alternativa_id_elegida'],
+            'es_correcta' => $r['alternativa_id_elegida']
+                ? ($correctas->get($r['alternativa_id_elegida']) ?? false)
+                : null,
+            'created_at' => $ahora,
+            'updated_at' => $ahora,
+        ], $respuestas);
+
+        RespuestaUsuario::upsert(
+            $filas,
+            ['intento_id', 'pregunta_id'],
+            ['alternativa_id_elegida', 'es_correcta', 'updated_at'],
+        );
+
+        return count($respuestas);
     }
 
     public function calcularPuntaje(IntentoExamen $intento): void

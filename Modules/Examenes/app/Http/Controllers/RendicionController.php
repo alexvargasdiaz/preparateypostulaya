@@ -155,6 +155,33 @@ class RendicionController extends Controller
     }
 
     /**
+     * Guarda varias respuestas del simulacro en una sola operación.
+     */
+    public function guardarMasivo(Request $request, $intentoId): JsonResponse
+    {
+        $validated = $request->validate([
+            'respuestas' => ['required', 'array', 'max:200'],
+            'respuestas.*.pregunta_id' => ['required', 'integer', 'exists:preguntas,id'],
+            'respuestas.*.alternativa_id_elegida' => ['nullable', 'integer', 'exists:alternativas,id'],
+        ]);
+
+        $intento = IntentoExamen::findOrFail($intentoId);
+
+        if ($intento->usuario_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (in_array($intento->estado, ['completado', 'abandonado'], true)) {
+            return response()->json(['error' => 'Este intento ya fue finalizado'], 409);
+        }
+
+        $guardadas = $this->examenService
+            ->guardarRespuestasMasivas($intento, $validated['respuestas']);
+
+        return response()->json(['saved' => $guardadas]);
+    }
+
+    /**
      * Finaliza el simulacro y calcula resultados.
      */
     public function finalizar($intentoId)

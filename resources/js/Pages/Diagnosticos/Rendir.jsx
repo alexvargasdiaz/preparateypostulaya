@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Brain, Star, BarChart3, ChevronLeft, ChevronRight, Check, Menu, ArrowRight, Sparkles, Clock, Layers } from 'lucide-react';
+import { guardarRespuestasEnLotes, guardarRespuestasBatch } from '#lib/guardarRespuestas';
 
 function Timer({ seconds, onTimeUp }) {
     const [remaining, setRemaining] = useState(seconds);
@@ -96,7 +97,7 @@ export default function RendirDiagnostico({ intento, preguntas, areas, tiempoRes
     const [currentIndex, setCurrentIndex] = useState(0);
     const [respuestas, setRespuestas] = useState(preguntas.map((p) => p.respuesta_guardada || null));
     const [showNav, setShowNav] = useState(false);
-    const [isFinished, setIsFinished] = useState(false);
+    const [finish, setFinish] = useState(null);
     const respuestasRef = useRef(respuestas);
     const autoSaveTimer = useRef(null);
 
@@ -104,25 +105,35 @@ export default function RendirDiagnostico({ intento, preguntas, areas, tiempoRes
     const totalPreguntas = preguntas.length;
     const answeredCount = respuestas.filter(Boolean).length;
 
+    const urlGuardarMasivo = `/diagnostico/rendir/${intento.id}/guardar-masivo`;
+    const urlResultados = `/diagnostico/rendir/${intento.id}/resultados`;
+
+    const responderPreguntas = useCallback((snapshot) => preguntas
+        .map((p, i) => ({ pregunta_id: p.id, alternativa_id_elegida: snapshot[i] ?? null }))
+        .filter((r) => r.alternativa_id_elegida != null), [preguntas]);
+
     useEffect(() => { respuestasRef.current = respuestas; }, [respuestas]);
 
     useEffect(() => {
-        autoSaveTimer.current = setInterval(() => {
-            const snapshot = respuestasRef.current;
-            Promise.all(preguntas.map((p, i) => snapshot[i] ? guardarRespuesta(p.id, snapshot[i]) : Promise.resolve()));
+        let enProceso = false;
+        autoSaveTimer.current = setInterval(async () => {
+            if (enProceso) return;
+            const respondidas = responderPreguntas(respuestasRef.current);
+            if (respondidas.length === 0) return;
+            enProceso = true;
+            try {
+                await guardarRespuestasBatch(urlGuardarMasivo, respondidas);
+            } catch (e) { console.error('Error en auto-guardado:', e); }
+            enProceso = false;
         }, 30000);
         return () => clearInterval(autoSaveTimer.current);
-    }, []);
+    }, [urlGuardarMasivo, responderPreguntas]);
 
     const guardarRespuesta = useCallback(async (preguntaId, alternativaId) => {
         try {
-            await fetch(`/diagnostico/rendir/${intento.id}/guardar`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content },
-                body: JSON.stringify({ pregunta_id: preguntaId, alternativa_id_elegida: alternativaId }),
-            });
+            await guardarRespuestasBatch(urlGuardarMasivo, [{ pregunta_id: preguntaId, alternativa_id_elegida: alternativaId }]);
         } catch (e) { console.error('Error al guardar:', e); }
-    }, [intento.id]);
+    }, [urlGuardarMasivo]);
 
     const handleSelect = (preguntaId, alternativaId) => {
         const newRespuestas = [...respuestas];
@@ -136,27 +147,56 @@ export default function RendirDiagnostico({ intento, preguntas, areas, tiempoRes
     const goPrev = () => { if (currentIndex > 0) setCurrentIndex(currentIndex - 1); };
 
     const handleFinish = async () => {
-        setIsFinished(true);
+        const respondidas = responderPreguntas(respuestasRef.current);
+
+        setFinish({ fase: 'guardando', listo: 0, total: respondidas.length });
+
         try {
-            await Promise.all(preguntas.map((p, i) => respuestas[i] ? guardarRespuesta(p.id, respuestas[i]) : Promise.resolve()));
-        } catch (e) {}
-        router.post(`/diagnostico/rendir/${intento.id}/finalizar`);
+            await guardarRespuestasEnLotes({
+                url: urlGuardarMasivo,
+                respuestas: respondidas,
+                onProgreso: (listo, total) => setFinish({ fase: 'guardando', listo, total }),
+            });
+        } catch (e) {
+            console.error('Error al guardar respuestas:', e);
+        }
+
+        setFinish({ fase: 'calculando', listo: respondidas.length, total: respondidas.length });
+
+        router.post(`/diagnostico/rendir/${intento.id}/finalizar`, {}, {
+            onError: () => { window.location.href = urlResultados; },
+        });
+
+        // Fallback: si Inertia no redirige en 60s, forzamos la navegación
+        setTimeout(() => { window.location.href = urlResultados; }, 60000);
     };
 
-    if (isFinished) {
+    if (finish) {
+        const pct = finish.total > 0 ? Math.round((finish.listo / finish.total) * 100) : 100;
         return (
             <div className="flex min-h-screen items-center justify-center bg-cyber-dark cyber-grid">
-                <div className="text-center">
+                <div className="w-full max-w-sm px-6 text-center">
                     <div className="relative mx-auto mb-8 flex h-24 w-24 items-center justify-center">
                         <div className="absolute inset-0 animate-ping rounded-full bg-neon-cyan/20" />
                         <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl cyber-card border-neon-cyan/50 shadow-neon-cyan">
                             <Brain className="h-8 w-8 text-neon-cyan animate-bounce" />
                         </div>
                     </div>
-                    <p className="text-2xl font-heading font-black text-neon-cyan neon-text">Calculando resultados...</p>
-                    <div className="mt-4 h-1 w-48 mx-auto rounded-full bg-cyber-dark-400 overflow-hidden">
-                        <div className="h-full w-full animate-pulse rounded-full bg-neon-cyan shadow-neon-cyan" />
+                    <p className="text-2xl font-heading font-black text-neon-cyan neon-text">
+                        {finish.fase === 'guardando' ? 'Guardando respuestas...' : 'Calculando resultados...'}
+                    </p>
+                    <p className="mt-2 text-sm text-text-muted">
+                        {finish.fase === 'guardando' && finish.total > 0
+                            ? `${finish.listo} de ${finish.total} respuestas`
+                            : 'Estamos procesando tus respuestas'}
+                    </p>
+                    <div className="mt-6 h-2 w-full rounded-full bg-cyber-dark-400 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-neon-cyan to-neon-magenta transition-all duration-300"
+                            style={{ width: `${finish.fase === 'calculando' ? 100 : pct}%`, boxShadow: '0 0 10px rgba(0,240,255,0.4)' }} />
                     </div>
+                    <p className="mt-3 font-heading text-sm font-black tabular-nums text-neon-cyan neon-text">
+                        {finish.fase === 'calculando' ? '100%' : `${pct}%`}
+                    </p>
                 </div>
             </div>
         );
