@@ -11,12 +11,12 @@ use Modules\Catalogo\Models\Institucion;
 
 class InstitucionController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $instituciones = Institucion::with('tipoExamen')
             ->withCount('categorias')
             ->orderBy('nombre')
-            ->get();
+            ->paginate($request->integer('per_page', 50));
         return response()->json($instituciones);
     }
 

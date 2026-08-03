@@ -7,6 +7,7 @@ namespace Modules\Bitacora\Services;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Modules\Catalogo\Models\Institucion;
 use Modules\Preguntas\Models\AreaAcademica;
 use Modules\Preguntas\Models\Concepto;
@@ -58,33 +59,50 @@ class BitacoraService
 
     /**
      * Indicadores globales del sistema (acotados al rango de fechas).
+     * Se calculan con agregados GROUP BY (2-3 consultas) en vez de un COUNT
+     * por indicador.
      */
     private function kpis(): array
     {
-        $estudiantes = $this->aplicarRango(User::where('rol', 'estudiante'));
-        $intentos = $this->aplicarRango(IntentoExamen::query());
+        $estudiantesPorEstado = $this->aplicarRango(User::where('rol', 'estudiante'))
+            ->selectRaw('estado, count(*) as total')
+            ->groupBy('estado')
+            ->pluck('total', 'estado')
+            ->map(fn ($v) => (int) $v);
+
+        $intentosPorEstado = $this->aplicarRango(IntentoExamen::query())
+            ->selectRaw('estado, count(*) as total')
+            ->groupBy('estado')
+            ->pluck('total', 'estado')
+            ->map(fn ($v) => (int) $v);
+
+        $especiales = IntentoExamen::query()
+            ->selectRaw("
+                sum(case when examen_id is null and institucion_id is null
+                        and tipo_simulacro_id is null and categoria_id is null
+                        and estado = 'completado' then 1 else 0 end) as diagnosticos,
+                sum(case when (examen_id is not null or institucion_id is not null
+                        or tipo_simulacro_id is not null) and estado = 'completado'
+                        then 1 else 0 end) as simulacros,
+                sum(case when email_enviado then 1 else 0 end) as emails,
+                sum(case when whatsapp_solicitado then 1 else 0 end) as whatsapp
+            ")
+            ->tap(fn (Builder $q) => $this->aplicarRango($q))
+            ->first();
 
         return [
-            'alumnos' => (clone $estudiantes)->count(),
-            'alumnos_aprobados' => (clone $estudiantes)->where('estado', 'activo')->count(),
-            'alumnos_pendientes' => (clone $estudiantes)->where('estado', 'pendiente')->count(),
-            'alumnos_rechazados' => (clone $estudiantes)->where('estado', 'rechazado')->count(),
-            'intentos_total' => (clone $intentos)->count(),
-            'intentos_completados' => (clone $intentos)->where('estado', 'completado')->count(),
-            'intentos_en_curso' => (clone $intentos)->where('estado', 'en_curso')->count(),
-            'intentos_abandonados' => (clone $intentos)->where('estado', 'abandonado')->count(),
-            'diagnosticos_completados' => IntentoExamen::query()
-                ->tap(fn (Builder $q) => $this->esDiagnostico($q))
-                ->where('estado', 'completado')
-                ->tap(fn (Builder $q) => $this->aplicarRango($q))
-                ->count(),
-            'simulacros_completados' => IntentoExamen::query()
-                ->tap(fn (Builder $q) => $this->esSimulacro($q))
-                ->where('estado', 'completado')
-                ->tap(fn (Builder $q) => $this->aplicarRango($q))
-                ->count(),
-            'emails_enviados' => (clone $intentos)->where('email_enviado', true)->count(),
-            'whatsapp_solicitados' => (clone $intentos)->where('whatsapp_solicitado', true)->count(),
+            'alumnos' => (int) $estudiantesPorEstado->sum(),
+            'alumnos_aprobados' => (int) $estudiantesPorEstado->get('activo', 0),
+            'alumnos_pendientes' => (int) $estudiantesPorEstado->get('pendiente', 0),
+            'alumnos_rechazados' => (int) $estudiantesPorEstado->get('rechazado', 0),
+            'intentos_total' => (int) $intentosPorEstado->sum(),
+            'intentos_completados' => (int) $intentosPorEstado->get('completado', 0),
+            'intentos_en_curso' => (int) $intentosPorEstado->get('en_curso', 0),
+            'intentos_abandonados' => (int) $intentosPorEstado->get('abandonado', 0),
+            'diagnosticos_completados' => (int) $especiales->diagnosticos,
+            'simulacros_completados' => (int) $especiales->simulacros,
+            'emails_enviados' => (int) $especiales->emails,
+            'whatsapp_solicitados' => (int) $especiales->whatsapp,
         ];
     }
 
@@ -202,6 +220,7 @@ class BitacoraService
 
     /**
      * Proceso 3: Simulacros por área académica.
+     * Una sola consulta GROUP BY en vez de 5 consultas por área.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -209,24 +228,37 @@ class BitacoraService
     {
         $areas = AreaAcademica::orderBy('nombre')->get(['id', 'nombre', 'activo']);
 
-        return $areas->map(function (AreaAcademica $area) {
-            $q = $this->aplicarRango(IntentoExamen::where('area_academica_id', $area->id));
-            $completados = (clone $q)->where('estado', 'completado');
+        $agregados = $this->aplicarRango(IntentoExamen::whereNotNull('area_academica_id'))
+            ->selectRaw("
+                area_academica_id,
+                count(*) as intentos,
+                sum(case when estado = 'completado' then 1 else 0 end) as completados,
+                sum(case when estado = 'completado' and aprobado then 1 else 0 end) as aprobados,
+                avg(case when estado = 'completado' and puntaje_total is not null
+                    and puntaje_maximo > 0 then 100.0 * puntaje_total / puntaje_maximo else null end) as promedio
+            ")
+            ->groupBy('area_academica_id')
+            ->get()
+            ->keyBy('area_academica_id');
+
+        return $areas->map(function (AreaAcademica $area) use ($agregados) {
+            $a = $agregados->get($area->id);
 
             return [
                 'area_id' => $area->id,
                 'nombre' => $area->nombre,
                 'activo' => (bool) $area->activo,
-                'intentos' => (clone $q)->count(),
-                'completados' => (clone $completados)->count(),
-                'aprobados' => (clone $completados)->where('aprobado', true)->count(),
-                'promedio' => $this->promedioPuntaje($q),
+                'intentos' => (int) ($a->intentos ?? 0),
+                'completados' => (int) ($a->completados ?? 0),
+                'aprobados' => (int) ($a->aprobados ?? 0),
+                'promedio' => $a?->promedio !== null ? (int) round((float) $a->promedio) : null,
             ];
         })->values()->all();
     }
 
     /**
      * Proceso 4: Simulacros por universidad / carrera postulada.
+     * Una sola consulta GROUP BY por universidad en vez de 6 consultas por fila.
      *
      * @return array<string, mixed>
      */
@@ -234,18 +266,31 @@ class BitacoraService
     {
         $instituciones = Institucion::orderBy('nombre')->get(['id', 'nombre']);
 
-        $porInstitucion = $instituciones->map(function (Institucion $inst) {
-            $q = $this->aplicarRango(IntentoExamen::where('institucion_id', $inst->id));
-            $completados = (clone $q)->where('estado', 'completado');
+        $agregados = $this->aplicarRango(IntentoExamen::whereNotNull('institucion_id'))
+            ->selectRaw("
+                institucion_id,
+                count(*) as intentos,
+                sum(case when estado = 'completado' then 1 else 0 end) as completados,
+                sum(case when estado = 'completado' and aprobado then 1 else 0 end) as aprobados,
+                count(distinct case when carrera is not null then carrera end) as carreras,
+                avg(case when estado = 'completado' and puntaje_total is not null
+                    and puntaje_maximo > 0 then 100.0 * puntaje_total / puntaje_maximo else null end) as promedio
+            ")
+            ->groupBy('institucion_id')
+            ->get()
+            ->keyBy('institucion_id');
+
+        $porInstitucion = $instituciones->map(function (Institucion $inst) use ($agregados) {
+            $a = $agregados->get($inst->id);
 
             return [
                 'institucion_id' => $inst->id,
                 'nombre' => $inst->nombre,
-                'intentos' => (clone $q)->count(),
-                'completados' => (clone $completados)->count(),
-                'aprobados' => (clone $completados)->where('aprobado', true)->count(),
-                'carreras' => (clone $q)->whereNotNull('carrera')->distinct('carrera')->count('carrera'),
-                'promedio' => $this->promedioPuntaje($q),
+                'intentos' => (int) ($a->intentos ?? 0),
+                'completados' => (int) ($a->completados ?? 0),
+                'aprobados' => (int) ($a->aprobados ?? 0),
+                'carreras' => (int) ($a->carreras ?? 0),
+                'promedio' => $a?->promedio !== null ? (int) round((float) $a->promedio) : null,
             ];
         })->values()->all();
 
@@ -377,22 +422,17 @@ class BitacoraService
 
     /**
      * Promedio de porcentaje de acierto de los intentos completados de una consulta.
+     * Se calcula con AVG() en SQL (AVG ignora NULLs, equivalente al promedio en PHP).
      */
     private function promedioPuntaje(Builder $query): ?int
     {
-        $rows = (clone $query)
+        $promedio = (clone $query)
             ->where('estado', 'completado')
             ->whereNotNull('puntaje_total')
             ->where('puntaje_maximo', '>', 0)
-            ->get(['puntaje_total', 'puntaje_maximo']);
+            ->avg(DB::raw('100.0 * puntaje_total / puntaje_maximo'));
 
-        if ($rows->isEmpty()) {
-            return null;
-        }
-
-        $suma = $rows->sum(fn ($r) => ($r->puntaje_total / $r->puntaje_maximo) * 100);
-
-        return (int) round($suma / $rows->count());
+        return $promedio !== null ? (int) round((float) $promedio) : null;
     }
 
     /**

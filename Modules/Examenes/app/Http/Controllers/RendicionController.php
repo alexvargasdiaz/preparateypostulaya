@@ -7,6 +7,7 @@ namespace Modules\Examenes\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Modules\Catalogo\Models\Examen;
 use Modules\Examenes\Services\ExamenService;
@@ -171,12 +172,22 @@ class RendicionController extends Controller
             abort(403);
         }
 
-        if (in_array($intento->estado, ['completado', 'abandonado'], true)) {
+        // Transacción con lock sobre la fila del intento: si un finalizar
+        // simultáneo ya cerró el intento (completado/abandonado), no se
+        // insertan respuestas sobre un examen terminado.
+        $guardadas = DB::transaction(function () use ($intento, $validated) {
+            $bloqueado = IntentoExamen::whereKey($intento->id)->lockForUpdate()->first();
+
+            if ($bloqueado === null || in_array($bloqueado->estado, ['completado', 'abandonado'], true)) {
+                return null;
+            }
+
+            return $this->examenService->guardarRespuestasMasivas($bloqueado, $validated['respuestas']);
+        });
+
+        if ($guardadas === null) {
             return response()->json(['error' => 'Este intento ya fue finalizado'], 409);
         }
-
-        $guardadas = $this->examenService
-            ->guardarRespuestasMasivas($intento, $validated['respuestas']);
 
         return response()->json(['saved' => $guardadas]);
     }
@@ -193,15 +204,22 @@ class RendicionController extends Controller
             abort(403);
         }
 
-        if ($intento->estado === 'completado') {
+        // Actualización atómica: solo el primer request que llegue pasa del
+        // estado en curso a completado; los duplicados (doble click, retry del
+        // navegador) no recalculan nada y van directo a resultados.
+        $finalizado = IntentoExamen::where('id', $intento->id)
+            ->whereNotIn('estado', ['completado', 'abandonado'])
+            ->update([
+                'estado' => 'completado',
+                'fecha_fin' => now(),
+                'tiempo_empleado_seg' => $intento->fecha_inicio?->diffInSeconds(now()) ?? 0,
+            ]);
+
+        if ($finalizado === 0) {
             return redirect()->route('resultados.show', $intento->id);
         }
 
-        $intento->update([
-            'estado' => 'completado',
-            'fecha_fin' => now(),
-            'tiempo_empleado_seg' => $intento->fecha_inicio->diffInSeconds(now()),
-        ]);
+        $intento->estado = 'completado';
 
         $this->examenService->calcularPuntaje($intento);
         $this->examenService->calcularResultadosPorConcepto($intento);

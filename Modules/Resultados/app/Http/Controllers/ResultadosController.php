@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Modules\Examenes\Services\ExamenService;
 use Modules\Rendicion\Models\IntentoExamen;
@@ -45,79 +46,18 @@ class ResultadosController extends Controller
             $intento->resultadosConceptos->pluck('concepto_id')
         )->get()->keyBy('concepto_id')->toArray();
 
-        // Para exámenes de área académica, calcular carreras compatibles
+        // Para exámenes de área académica, calcular carreras compatibles.
+        // El cálculo es estable tras finalizar; se cachea por intento.
         $carrerasCompatibles = [];
         $carrerasNoCompatibles = [];
 
         if ($intento->area_academica_id && !$intento->examen_id) {
-            $puntajePorArea = $intento->resultadosConceptos->map(fn ($rc) => [
-                'concepto_id' => $rc->concepto_id,
-                'nombre' => $rc->concepto?->nombre ?? 'Sin área',
-                'porcentaje' => $rc->porcentaje_acierto,
-            ])->values();
+            $carreras = $intento->puntaje_total !== null
+                ? Cache::remember("resultados.carreras.{$intento->id}", now()->addDay(), fn () => $this->calcularCarrerasCompatibles($intento))
+                : $this->calcularCarrerasCompatibles($intento);
 
-            $puntajeTotalEstudiante = $intento->puntaje_maximo > 0
-                ? round(($intento->puntaje_total / $intento->puntaje_maximo) * 100, 2)
-                : 0;
-
-            $categoriasQuery = \Modules\Catalogo\Models\Categoria::with(['institucion', 'requisitos.concepto'])
-                ->where(function ($q) {
-                    $q->whereHas('requisitos')
-                      ->orWhere('puntaje_minimo_total', '>', 0);
-                });
-
-            // Solo comparar contra carreras de la misma universidad
-            if ($intento->institucion_id) {
-                $categoriasQuery->where('institucion_id', $intento->institucion_id);
-            }
-
-            $categorias = $categoriasQuery->get();
-
-            foreach ($categorias as $categoria) {
-                $requisitos = $categoria->requisitos;
-                $minimoTotal = $categoria->puntaje_minimo_total ?? 0;
-
-                $cumplePorPuntaje = $puntajeTotalEstudiante >= $minimoTotal;
-                $cumpleAreas = true;
-                $areasFaltantes = [];
-
-                foreach ($requisitos as $requisito) {
-                    $area = $puntajePorArea->firstWhere('concepto_id', $requisito->concepto_id);
-                    $pctObtenido = $area['porcentaje'] ?? 0;
-                    $pctRequerido = $requisito->puntaje_minimo;
-
-                    if ($pctObtenido < $pctRequerido) {
-                        $cumpleAreas = false;
-                        $areasFaltantes[] = [
-                            'nombre' => $requisito->concepto?->nombre ?? 'Área',
-                            'obtenido' => $pctObtenido,
-                            'requerido' => $pctRequerido,
-                        ];
-                    }
-                }
-
-                $entry = [
-                    'categoria_id' => $categoria->id,
-                    'nombre' => $categoria->nombre,
-                    'institucion' => $categoria->institucion?->nombre ?? '—',
-                    'es_carrera_aplicada' => $intento->categoria_id === $categoria->id,
-                    'puntaje_obtenido' => $puntajeTotalEstudiante,
-                    'puntaje_minimo' => $minimoTotal,
-                    'cumple_puntaje' => $cumplePorPuntaje,
-                    'porcentaje_general' => $puntajeTotalEstudiante,
-                    'total_requisitos' => $requisitos->count(),
-                ];
-
-                if ($cumplePorPuntaje && ($requisitos->isEmpty() || $cumpleAreas)) {
-                    $carrerasCompatibles[] = $entry;
-                } else {
-                    $entry['areas_faltantes'] = $areasFaltantes;
-                    $carrerasNoCompatibles[] = $entry;
-                }
-            }
-
-            usort($carrerasCompatibles, fn ($a, $b) => $b['puntaje_obtenido'] <=> $a['puntaje_obtenido']);
-            usort($carrerasNoCompatibles, fn ($a, $b) => $b['puntaje_obtenido'] <=> $a['puntaje_obtenido']);
+            $carrerasCompatibles = $carreras['compatibles'];
+            $carrerasNoCompatibles = $carreras['no_compatibles'];
         }
 
         return Inertia::render('Resultados/Index', [
@@ -137,6 +77,92 @@ class ResultadosController extends Controller
                 ]
                 : null,
         ]);
+    }
+
+    /**
+     * Calcula las carreras compatibles/no compatibles para un intento de área
+     * académica. Operación estable tras finalizar; se cachea por intento.
+     *
+     * @return array{compatibles: array, no_compatibles: array}
+     */
+    private function calcularCarrerasCompatibles(IntentoExamen $intento): array
+    {
+        $puntajePorArea = $intento->resultadosConceptos->map(fn ($rc) => [
+            'concepto_id' => $rc->concepto_id,
+            'nombre' => $rc->concepto?->nombre ?? 'Sin área',
+            'porcentaje' => $rc->porcentaje_acierto,
+        ])->values();
+
+        $puntajeTotalEstudiante = $intento->puntaje_maximo > 0
+            ? round(($intento->puntaje_total / $intento->puntaje_maximo) * 100, 2)
+            : 0;
+
+        $categoriasQuery = \Modules\Catalogo\Models\Categoria::with(['institucion', 'requisitos.concepto'])
+            ->where(function ($q) {
+                $q->whereHas('requisitos')
+                    ->orWhere('puntaje_minimo_total', '>', 0);
+            });
+
+        // Solo comparar contra carreras de la misma universidad
+        if ($intento->institucion_id) {
+            $categoriasQuery->where('institucion_id', $intento->institucion_id);
+        }
+
+        $categorias = $categoriasQuery->get();
+
+        $carrerasCompatibles = [];
+        $carrerasNoCompatibles = [];
+
+        foreach ($categorias as $categoria) {
+            $requisitos = $categoria->requisitos;
+            $minimoTotal = $categoria->puntaje_minimo_total ?? 0;
+
+            $cumplePorPuntaje = $puntajeTotalEstudiante >= $minimoTotal;
+            $cumpleAreas = true;
+            $areasFaltantes = [];
+
+            foreach ($requisitos as $requisito) {
+                $area = $puntajePorArea->firstWhere('concepto_id', $requisito->concepto_id);
+                $pctObtenido = $area['porcentaje'] ?? 0;
+                $pctRequerido = $requisito->puntaje_minimo;
+
+                if ($pctObtenido < $pctRequerido) {
+                    $cumpleAreas = false;
+                    $areasFaltantes[] = [
+                        'nombre' => $requisito->concepto?->nombre ?? 'Área',
+                        'obtenido' => $pctObtenido,
+                        'requerido' => $pctRequerido,
+                    ];
+                }
+            }
+
+            $entry = [
+                'categoria_id' => $categoria->id,
+                'nombre' => $categoria->nombre,
+                'institucion' => $categoria->institucion?->nombre ?? '—',
+                'es_carrera_aplicada' => $intento->categoria_id === $categoria->id,
+                'puntaje_obtenido' => $puntajeTotalEstudiante,
+                'puntaje_minimo' => $minimoTotal,
+                'cumple_puntaje' => $cumplePorPuntaje,
+                'porcentaje_general' => $puntajeTotalEstudiante,
+                'total_requisitos' => $requisitos->count(),
+            ];
+
+            if ($cumplePorPuntaje && ($requisitos->isEmpty() || $cumpleAreas)) {
+                $carrerasCompatibles[] = $entry;
+            } else {
+                $entry['areas_faltantes'] = $areasFaltantes;
+                $carrerasNoCompatibles[] = $entry;
+            }
+        }
+
+        usort($carrerasCompatibles, fn ($a, $b) => $b['puntaje_obtenido'] <=> $a['puntaje_obtenido']);
+        usort($carrerasNoCompatibles, fn ($a, $b) => $b['puntaje_obtenido'] <=> $a['puntaje_obtenido']);
+
+        return [
+            'compatibles' => $carrerasCompatibles,
+            'no_compatibles' => $carrerasNoCompatibles,
+        ];
     }
 
     /**

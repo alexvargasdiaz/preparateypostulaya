@@ -12,7 +12,7 @@ use Modules\Rendicion\Models\IntentoExamen;
 class HistorialController extends Controller
 {
     /**
-     * Muestra el historial de simulacros del usuario.
+     * Muestra el historial de simulacros del usuario (paginado).
      */
     public function index()
     {
@@ -22,10 +22,16 @@ class HistorialController extends Controller
         ])
             ->where('usuario_id', auth()->id())
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(15);
 
         return Inertia::render('Historial/Index', [
-            'intentos' => $intentos,
+            'intentos' => $intentos->items(),
+            'paginacion' => [
+                'pagina' => $intentos->currentPage(),
+                'ultimaPagina' => $intentos->lastPage(),
+                'paginaAnterior' => $intentos->previousPageUrl(),
+                'paginaSiguiente' => $intentos->nextPageUrl(),
+            ],
         ]);
     }
 }

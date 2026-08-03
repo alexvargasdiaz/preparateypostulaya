@@ -235,19 +235,32 @@ class ExamenService
             }
         }
 
+        if ($conceptos === []) {
+            return;
+        }
+
+        $ahora = now();
+        $filas = [];
         foreach ($conceptos as $data) {
             $pct = $data['preguntas_totales'] > 0
                 ? round(($data['preguntas_correctas'] / $data['preguntas_totales']) * 100, 2)
                 : 0;
 
-            ResultadoConcepto::updateOrCreate(
-                ['intento_id' => $intento->id, 'concepto_id' => $data['concepto_id']],
-                [
-                    'preguntas_totales' => $data['preguntas_totales'],
-                    'preguntas_correctas' => $data['preguntas_correctas'],
-                    'porcentaje_acierto' => $pct,
-                ]
-            );
+            $filas[] = [
+                'intento_id' => $intento->id,
+                'concepto_id' => $data['concepto_id'],
+                'preguntas_totales' => $data['preguntas_totales'],
+                'preguntas_correctas' => $data['preguntas_correctas'],
+                'porcentaje_acierto' => $pct,
+                'created_at' => $ahora,
+                'updated_at' => $ahora,
+            ];
         }
+
+        ResultadoConcepto::upsert(
+            $filas,
+            ['intento_id', 'concepto_id'],
+            ['preguntas_totales', 'preguntas_correctas', 'porcentaje_acierto', 'updated_at'],
+        );
     }
 }

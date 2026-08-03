@@ -11,13 +11,13 @@ use Modules\Catalogo\Models\Categoria;
 
 class CategoriaController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $categorias = Categoria::with('institucion')
             ->withCount('examenes')
             ->orderBy('institucion_id')
             ->orderBy('orden')
-            ->get();
+            ->paginate($request->integer('per_page', 50));
         return response()->json($categorias);
     }
 

@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Catalogo\Models\Categoria;
@@ -265,12 +267,22 @@ class DiagnosticoController extends Controller
             abort(403);
         }
 
-        if (in_array($intento->estado, ['completado', 'abandonado'], true)) {
+        // Transacción con lock: si un finalizar simultáneo cerró el intento,
+        // no se insertan respuestas sobre un diagnóstico terminado.
+        $guardadas = DB::transaction(function () use ($intento, $validated) {
+            $bloqueado = IntentoExamen::whereKey($intento->id)->lockForUpdate()->first();
+
+            if ($bloqueado === null || in_array($bloqueado->estado, ['completado', 'abandonado'], true)) {
+                return null;
+            }
+
+            return app(ExamenService::class)
+                ->guardarRespuestasMasivas($bloqueado, $validated['respuestas']);
+        });
+
+        if ($guardadas === null) {
             return response()->json(['error' => 'Este intento ya fue finalizado'], 409);
         }
-
-        $guardadas = app(ExamenService::class)
-            ->guardarRespuestasMasivas($intento, $validated['respuestas']);
 
         return response()->json(['saved' => $guardadas]);
     }
@@ -291,11 +303,21 @@ class DiagnosticoController extends Controller
             return redirect()->route('diagnostico.resultados', ['intento' => $intento->id]);
         }
 
-        $intento->update([
-            'estado' => 'completado',
-            'fecha_fin' => now(),
-            'tiempo_empleado_seg' => $intento->fecha_inicio->diffInSeconds(now()),
-        ]);
+        // Actualización atómica: evita que dos POST finalizar simultáneos (doble
+        // click o retry del navegador) calculen dos veces puntaje y notificaciones.
+        $finalizado = IntentoExamen::where('id', $intento->id)
+            ->whereNotIn('estado', ['completado', 'abandonado'])
+            ->update([
+                'estado' => 'completado',
+                'fecha_fin' => now(),
+                'tiempo_empleado_seg' => $intento->fecha_inicio?->diffInSeconds(now()) ?? 0,
+            ]);
+
+        if ($finalizado === 0) {
+            return redirect()->route('diagnostico.resultados', ['intento' => $intento->id]);
+        }
+
+        $intento->estado = 'completado';
 
         // Calcular puntaje general
         $preguntasIds = $intento->progreso_guardado['preguntas_ids'] ?? [];
@@ -327,6 +349,42 @@ class DiagnosticoController extends Controller
             abort(403);
         }
 
+        // El cálculo de compatibilidad es estable tras finalizar; se cachea
+        // por intento para no recomputarlo en cada visita a resultados.
+        $calculado = $intento->puntaje_total !== null
+            ? Cache::remember("resultados.diagnostico.{$intento->id}", now()->addDay(), fn () => $this->calcularCompatibilidadCarreras($intento))
+            : $this->calcularCompatibilidadCarreras($intento);
+
+        $puntajePorConcepto = $calculado['puntajePorConcepto'];
+        $puntajePorArea = $calculado['puntajePorArea'];
+        $puntajeTotalEstudiante = $calculado['puntajeTotalEstudiante'];
+        $compatibles = $calculado['compatibles'];
+        $noCompatibles = $calculado['noCompatibles'];
+
+        return Inertia::render('Diagnosticos/Resultados', [
+            'intento' => $intento,
+            'puntajePorArea' => $puntajePorArea,
+            'puntajePorConcepto' => $puntajePorConcepto,
+            'puntajeTotalEstudiante' => $puntajeTotalEstudiante,
+            'carrerasCompatibles' => $compatibles,
+            'carrerasNoCompatibles' => $noCompatibles,
+        ]);
+    }
+
+    /**
+     * Calcula la compatibilidad con carreras para la vista de resultados del
+     * diagnóstico. Operación estable tras finalizar; el resultado se cachea.
+     *
+     * @return array{
+     *     puntajePorConcepto: \Illuminate\Support\Collection,
+     *     puntajePorArea: \Illuminate\Support\Collection,
+     *     puntajeTotalEstudiante: float|int,
+     *     compatibles: array,
+     *     noCompatibles: array,
+     * }
+     */
+    private function calcularCompatibilidadCarreras(IntentoExamen $intento): array
+    {
         // Puntaje por concepto (individual)
         $puntajePorConcepto = $intento->resultadosConceptos->map(fn ($rc) => [
             'concepto_id' => $rc->concepto_id,
@@ -439,14 +497,13 @@ class DiagnosticoController extends Controller
         usort($compatibles, fn ($a, $b) => $b['puntaje_obtenido'] <=> $a['puntaje_obtenido']);
         usort($noCompatibles, fn ($a, $b) => $b['puntaje_obtenido'] <=> $a['puntaje_obtenido']);
 
-        return Inertia::render('Diagnosticos/Resultados', [
-            'intento' => $intento,
-            'puntajePorArea' => $puntajePorArea,
+        return [
             'puntajePorConcepto' => $puntajePorConcepto,
+            'puntajePorArea' => $puntajePorArea,
             'puntajeTotalEstudiante' => $puntajeTotalEstudiante,
-            'carrerasCompatibles' => $compatibles,
-            'carrerasNoCompatibles' => $noCompatibles,
-        ]);
+            'compatibles' => $compatibles,
+            'noCompatibles' => $noCompatibles,
+        ];
     }
 
     /**
@@ -475,19 +532,32 @@ class DiagnosticoController extends Controller
             }
         }
 
+        if ($conceptos === []) {
+            return;
+        }
+
+        $ahora = now();
+        $filas = [];
         foreach ($conceptos as $data) {
             $pct = $data['preguntas_totales'] > 0
                 ? round(($data['preguntas_correctas'] / $data['preguntas_totales']) * 100, 2)
                 : 0;
 
-            ResultadoConcepto::updateOrCreate(
-                ['intento_id' => $intento->id, 'concepto_id' => $data['concepto_id']],
-                [
-                    'preguntas_totales' => $data['preguntas_totales'],
-                    'preguntas_correctas' => $data['preguntas_correctas'],
-                    'porcentaje_acierto' => $pct,
-                ]
-            );
+            $filas[] = [
+                'intento_id' => $intento->id,
+                'concepto_id' => $data['concepto_id'],
+                'preguntas_totales' => $data['preguntas_totales'],
+                'preguntas_correctas' => $data['preguntas_correctas'],
+                'porcentaje_acierto' => $pct,
+                'created_at' => $ahora,
+                'updated_at' => $ahora,
+            ];
         }
+
+        ResultadoConcepto::upsert(
+            $filas,
+            ['intento_id', 'concepto_id'],
+            ['preguntas_totales', 'preguntas_correctas', 'porcentaje_acierto', 'updated_at'],
+        );
     }
 }

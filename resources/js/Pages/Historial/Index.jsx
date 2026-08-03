@@ -19,7 +19,7 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-export default function Historial({ intentos }) {
+export default function Historial({ intentos, paginacion }) {
     return (
         <>
             <Head title="Mi Historial" />
@@ -169,6 +169,28 @@ export default function Historial({ intentos }) {
                                 );
                             })}
                         </motion.div>
+                    )}
+
+                    {paginacion && paginacion.ultimaPagina > 1 && (
+                        <div className="mt-8 flex items-center justify-center gap-3">
+                            {paginacion.paginaAnterior ? (
+                                <Link href={paginacion.paginaAnterior} className="cyber-btn cyber-btn-secondary rounded-lg px-4 py-2 text-xs">
+                                    ← Anterior
+                                </Link>
+                            ) : (
+                                <span className="rounded-lg px-4 py-2 text-xs text-text-muted font-semibold opacity-50">← Anterior</span>
+                            )}
+                            <span className="text-xs text-text-muted font-heading font-bold">
+                                Página {paginacion.pagina} de {paginacion.ultimaPagina}
+                            </span>
+                            {paginacion.paginaSiguiente ? (
+                                <Link href={paginacion.paginaSiguiente} className="cyber-btn cyber-btn-secondary rounded-lg px-4 py-2 text-xs">
+                                    Siguiente →
+                                </Link>
+                            ) : (
+                                <span className="rounded-lg px-4 py-2 text-xs text-text-muted font-semibold opacity-50">Siguiente →</span>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>

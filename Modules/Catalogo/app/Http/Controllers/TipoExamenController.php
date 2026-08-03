@@ -12,9 +12,11 @@ use Modules\Catalogo\Models\TipoExamen;
 
 class TipoExamenController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $tipos = TipoExamen::withCount('instituciones')->orderBy('nombre')->get();
+        $tipos = TipoExamen::withCount('instituciones')
+            ->orderBy('nombre')
+            ->paginate($request->integer('per_page', 50));
         return response()->json($tipos);
     }
 

@@ -11,12 +11,12 @@ use Modules\Catalogo\Models\Examen;
 
 class ExamenController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $examenes = Examen::with('categoria.institucion')
             ->withCount('secciones')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($request->integer('per_page', 50));
         return response()->json($examenes);
     }
 

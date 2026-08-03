@@ -9,6 +9,12 @@ use Modules\Rendicion\Models\IntentoExamen;
 
 class ProgresoService
 {
+    /**
+     * Los cuatro métodos públicos consultan el mismo set de intentos; se carga
+     * una sola vez por petición para evitar repetir la query pesada 4 veces.
+     */
+    private ?Collection $intentosCache = null;
+
     public function obtenerEstadisticas(int $userId): array
     {
         $intentos = $this->obtenerIntentos($userId);
@@ -95,7 +101,7 @@ class ProgresoService
 
     private function obtenerIntentos(int $userId): Collection
     {
-        return IntentoExamen::with([
+        return $this->intentosCache ??= IntentoExamen::with([
             'examen.categoria.institucion',
             'institucion:id,nombre',
             'resultadosConceptos.concepto',

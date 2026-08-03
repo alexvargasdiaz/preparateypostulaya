@@ -25,7 +25,7 @@ class DashboardService
         $intentos = IntentoExamen::where('usuario_id', $userId)
             ->where('estado', 'completado')
             ->whereNotNull('institucion_id')
-            ->with(['institucion:id,nombre', 'examen:id,titulo,categoria_id'])
+            ->with('institucion:id,nombre')
             ->get();
 
         $grupos = [];
