@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
     LayoutDashboard, FileText, BookOpen, BarChart3, Bell,
     Building2, GraduationCap, ClipboardList, Users, UserCog,
-    LogOut, Menu, X, ChevronRight, UserCircle, Brain, Target, Layers, ChevronLeft
+    LogOut, Menu, X, ChevronRight, UserCircle, Brain, Target, Layers, ChevronLeft,
+    Activity
 } from 'lucide-react';
 
 const navigation = [
@@ -43,6 +44,12 @@ const adminGroups = [
         items: [
             { name: 'Alumnos', href: '/admin/alumnos', icon: Users },
             { name: 'Usuarios', href: '/admin/usuarios', icon: UserCog },
+        ],
+    },
+    {
+        label: 'Monitoreo',
+        items: [
+            { name: 'Bitácora de Procesos', href: '/admin/bitacora', icon: Activity },
         ],
     },
 ];

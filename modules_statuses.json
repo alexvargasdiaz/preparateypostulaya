@@ -10,5 +10,6 @@
     "Dashboard": true,
     "Progreso": true,
     "Historial": true,
-    "UserManagement": true
+    "UserManagement": true,
+    "Bitacora": true
 }

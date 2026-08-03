@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/bitacora",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Bitacora\\": "app/",
+            "Modules\\Bitacora\\Database\\Factories\\": "database/factories/",
+            "Modules\\Bitacora\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Bitacora\\Tests\\": "tests/"
+        }
+    }
+}
