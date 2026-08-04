@@ -9,17 +9,20 @@ abstract class TestCase extends BaseTestCase
     /**
      * Fuerza el entorno de pruebas ANTES de que se cree la aplicación.
      *
-     * El proceso `php artisan test` arranca la app con el `.env` real, dejando
-     * valores en $_ENV (APP_ENV=local, DB_DATABASE=preparateypostulaya) que
-     * impedirían seleccionar `.env.testing` y harían que los tests tocaran la
-     * base de datos real. Aquí limpiamos esos restos y aseguramos que los tests
-     * usen siempre la BD aislada definida en `.env.testing`.
+     * El proceso `php artisan test` arranca la app con el `.env` real y luego
+     * borra esas variables del entorno antes de lanzar PHPUnit (Collision
+     * TestCommand::clearEnv). El proceso hijo de PHPUnit, a su vez, solo carga
+     * `.env.testing` al crear la aplicación, así que las credenciales de la BD
+     * (contraseña, usuario, host) nunca llegaban a la conexión de pruebas.
      *
-     * Las credenciales de la BD se toman del entorno del proceso (cargado desde
-     * el `.env` real) para no guardar secretos en archivos versionados.
+     * Aquí volvemos a cargar el `.env` real (no versionado) para recuperar esas
+     * credenciales, y aseguramos que los tests usen siempre la BD aislada
+     * definida en `.env.testing` sin tocar la base de datos real.
      */
     protected function setUp(): void
     {
+        $this->cargarCredencialesReales();
+
         $dbCredentials = [];
         foreach (['DB_HOST', 'DB_PORT', 'DB_USERNAME', 'DB_PASSWORD'] as $variable) {
             $dbCredentials[$variable] = $_ENV[$variable] ?? getenv($variable);
@@ -42,5 +45,26 @@ abstract class TestCase extends BaseTestCase
         }
 
         parent::setUp();
+    }
+
+    /**
+     * Recupera las credenciales reales de la BD desde el `.env` del proyecto.
+     *
+     * Se usa el mismo repositorio inmutable que emplea el propio arranque de
+     * Laravel (Env::getRepository), por lo que las variables ya definidas por
+     * phpunit.xml o `.env.testing` (APP_ENV, DB_DATABASE, DB_URL...) no se
+     * sobrescriben: solo se añaden las que faltan, como DB_PASSWORD.
+     */
+    private function cargarCredencialesReales(): void
+    {
+        $ruta = dirname(__DIR__);
+
+        if (is_file($ruta.'/.env')) {
+            \Dotenv\Dotenv::create(
+                \Illuminate\Support\Env::getRepository(),
+                $ruta,
+                '.env'
+            )->safeLoad();
+        }
     }
 }
