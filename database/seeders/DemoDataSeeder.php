@@ -78,22 +78,16 @@ class DemoDataSeeder extends Seeder
 
     private function crearConceptos(AreaAcademica $area): array
     {
+        // Solo cursos de ciencias exactas. Las materias de letras/sociales
+        // (Geografía, Historia, Literatura, Gramática, etc.) pertenecen a
+        // otras áreas académicas y no deben duplicarse aquí.
         $nombresConceptos = [
-            'Comprensión lectora',
-            'Sinónimos y antónimos',
-            'Analogías',
             'Sucesiones numéricas',
             'Planteo de ecuaciones',
             'Porcentajes',
             'Álgebra',
             'Geometría plana',
             'Trigonometría',
-            'Gramática',
-            'Literatura peruana',
-            'Comprensión de textos',
-            'Historia del Perú',
-            'Geografía',
-            'Economía básica',
         ];
 
         $conceptos = [];
@@ -106,7 +100,25 @@ class DemoDataSeeder extends Seeder
                 ]
             );
         }
-        $this->command->info('✅ 15 conceptos vinculados al área');
+
+        // Limpieza de conceptos heredados de versiones anteriores del seeder
+        // que no corresponden a un área de ciencias exactas (p.ej. Geografía,
+        // Historia del Perú, Comprensión lectora). Sus preguntas y resultados
+        // asociados se eliminan para evitar duplicados entre áreas.
+        $conceptosObsoletos = Concepto::where('area_academica_id', $area->id)
+            ->whereNotIn('nombre', $nombresConceptos)
+            ->get();
+
+        foreach ($conceptosObsoletos as $concepto) {
+            Pregunta::where('concepto_id', $concepto->id)->delete();
+            $concepto->delete();
+        }
+
+        if ($conceptosObsoletos->isNotEmpty()) {
+            $this->command->warn('  → Eliminados de Ciencias Básicas: ' . $conceptosObsoletos->pluck('nombre')->implode(', '));
+        }
+
+        $this->command->info('✅ ' . count($conceptos) . ' conceptos vinculados al área');
         return $conceptos;
     }
 
@@ -127,10 +139,10 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
-        // Asignar 2 preguntas por cada concepto
+        // Asignar 2 preguntas por cada concepto (3 para los cursos principales)
         $conceptosData = [];
         foreach ($conceptos as $nombre => $concepto) {
-            $numPreg = in_array($nombre, ['Álgebra', 'Geometría plana', 'Comprensión lectora']) ? 3 : 2;
+            $numPreg = in_array($nombre, ['Álgebra', 'Geometría plana']) ? 3 : 2;
             $conceptosData[$concepto->id] = ['num_preguntas' => $numPreg];
         }
         $examen->conceptos()->sync($conceptosData);
