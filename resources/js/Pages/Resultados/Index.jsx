@@ -5,7 +5,7 @@ import {
     CheckCircle2, XCircle, Clock, HelpCircle, Calendar,
     Mail, MessageCircle, BarChart3, AlertTriangle, FileText,
     ChevronDown, ChevronUp, Eye, GraduationCap, Building2, Trophy,
-    Star
+    Star, ArrowLeft
 } from 'lucide-react';
 
 function CircularProgress({ value, size = 120, strokeWidth = 8 }) {
@@ -118,18 +118,29 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                 >
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,240,255,0.1),transparent_70%)]" />
                     <div className="relative mx-auto max-w-full px-5 sm:px-8 lg:px-10">
-                        <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold backdrop-blur-sm neon-text ${
-                            aprobado ? 'cyber-badge cyber-badge-cyan' : 'cyber-badge cyber-badge-magenta'
-                        }`}>
-                            {aprobado ? <Star className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                            {aprobado ? '¡Aprobado!' : 'Completado'}
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <div className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold backdrop-blur-sm neon-text ${
+                                    aprobado ? 'cyber-badge cyber-badge-cyan' : 'cyber-badge cyber-badge-magenta'
+                                }`}>
+                                    {aprobado ? <Star className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                                    {aprobado ? '¡Aprobado!' : 'Completado'}
+                                </div>
+                                <h1 className="mt-4 text-2xl font-heading font-black text-text-primary sm:text-3xl neon-text-cyan">
+                                    {institucion?.nombre || 'Simulacro'}
+                                </h1>
+                                <p className="mt-2 text-text-muted text-sm sm:text-base font-semibold">
+                                    {intento?.examen?.titulo || intento?.carrera || ''}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => (window.history.length > 1 ? window.history.back() : (window.location.href = '/dashboard'))}
+                                className="cyber-btn flex-shrink-0 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold border-cyber-dark-400"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                                Atrás
+                            </button>
                         </div>
-                        <h1 className="mt-4 text-2xl font-heading font-black text-text-primary sm:text-3xl neon-text-cyan">
-                            {institucion?.nombre || 'Simulacro'}
-                        </h1>
-                        <p className="mt-2 text-text-muted text-sm sm:text-base font-semibold">
-                            {intento?.examen?.titulo || intento?.carrera || ''}
-                        </p>
                     </div>
                 </div>
 
@@ -503,31 +514,53 @@ export default function ResultadoExamen({ intento, institucion, respuestas, resu
                                                                 />
                                                             )}
 
-                                                            {elegida ? (
-                                                                <div
-                                                                    className={`flex items-start gap-3 rounded-xl border p-3 ${
-                                                                        esCorrecta
-                                                                            ? 'border-neon-cyan/40 bg-neon-cyan/5'
-                                                                            : 'border-neon-magenta/30 bg-neon-magenta/5'
-                                                                    }`}
-                                                                >
-                                                                    <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                                                                        esCorrecta
-                                                                            ? 'bg-neon-cyan/20 text-neon-cyan'
-                                                                            : 'bg-neon-magenta/20 text-neon-magenta'
-                                                                    }`}>
-                                                                        {esCorrecta ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-                                                                    </span>
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <p className="text-sm text-text-secondary">{elegida.texto}</p>
-                                                                        {elegida.imagen_url && (
-                                                                            <img src={elegida.imagen_url} alt="Tu respuesta" className="mt-2 max-h-24 rounded-xl border border-cyber-dark-400/30 object-contain" />
-                                                                        )}
+                                                            <div className={`grid gap-2 ${!esCorrecta && correcta ? 'sm:grid-cols-2' : ''}`}>
+                                                                {elegida ? (
+                                                                    <div
+                                                                        className={`flex items-start gap-3 rounded-xl border p-3 ${
+                                                                            esCorrecta
+                                                                                ? 'border-neon-cyan/40 bg-neon-cyan/5'
+                                                                                : 'border-neon-magenta/30 bg-neon-magenta/5'
+                                                                        }`}
+                                                                    >
+                                                                        <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                                                                            esCorrecta
+                                                                                ? 'bg-neon-cyan/20 text-neon-cyan'
+                                                                                : 'bg-neon-magenta/20 text-neon-magenta'
+                                                                        }`}>
+                                                                            {esCorrecta ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                                                                        </span>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className={`text-[10px] font-bold uppercase tracking-wider ${esCorrecta ? 'text-neon-cyan' : 'text-neon-magenta'}`}>
+                                                                                Tu respuesta
+                                                                            </p>
+                                                                            <p className="mt-0.5 text-sm text-text-secondary">{elegida.texto}</p>
+                                                                            {elegida.imagen_url && (
+                                                                                <img src={elegida.imagen_url} alt="Tu respuesta" className="mt-2 max-h-24 rounded-xl border border-cyber-dark-400/30 object-contain" />
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            ) : (
-                                                                <p className="text-sm text-text-muted italic">Sin respuesta</p>
-                                                            )}
+                                                                ) : (
+                                                                    <p className="text-sm text-text-muted italic">Sin respuesta</p>
+                                                                )}
+
+                                                                {!esCorrecta && correcta && (
+                                                                    <div className="flex items-start gap-3 rounded-xl border border-neon-green/40 bg-neon-green/5 p-3">
+                                                                        <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-neon-green/20 text-[10px] font-bold text-neon-green">
+                                                                            <CheckCircle2 size={12} />
+                                                                        </span>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-[10px] font-bold uppercase tracking-wider text-neon-green">
+                                                                                Respuesta correcta
+                                                                            </p>
+                                                                            <p className="mt-0.5 text-sm text-text-secondary">{correcta.texto}</p>
+                                                                            {correcta.imagen_url && (
+                                                                                <img src={correcta.imagen_url} alt="Respuesta correcta" className="mt-2 max-h-24 rounded-xl border border-cyber-dark-400/30 object-contain" />
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </motion.div>
                                                 )}
